@@ -61,7 +61,7 @@ pipeline {
 
         stage('6. Push Registry') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'docker-hub-login', passwordVariable: 'PASS', usernameVariable: 'USER')]) {
+                withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', passwordVariable: 'PASS', usernameVariable: 'USER')]) {
                     sh "echo \$PASS | docker login -u \$USER --password-stdin"
                     sh "docker push ${DOCKER_USER}/${IMAGE_NAME}:${env.BUILD_ID}"
                     sh "docker push ${DOCKER_USER}/${IMAGE_NAME}:latest"
