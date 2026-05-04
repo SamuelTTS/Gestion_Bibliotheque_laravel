@@ -7,7 +7,7 @@ pipeline {
         IMAGE_NAME      = "laravel-biblio"
         
         // --- CONFIGURATION DEPLOIEMENT ---
-        NETWORK_NAME    = "mon-reseau-pfa" // Remplace par ton vrai nom de réseau
+        NETWORK_NAME    = "devops-network" // Remplace par ton vrai nom de réseau
         CONTAINER_STAGING = "laravel-app-staging"
         CONTAINER_PROD    = "laravel-app-prod"
         
