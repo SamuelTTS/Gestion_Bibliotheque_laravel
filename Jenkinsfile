@@ -7,34 +7,34 @@ pipeline {
     }
 
     stages {
-        stage('1. Préparation') {
+        stage('1. Checkout') {
             steps {
                 checkout scm
-                echo "Code Laravel récupéré avec succès."
             }
         }
 
-        stage('2. Build & Tests') {
+        stage('2. Build & Static Analysis') {
             agent {
-                // On utilise une image PHP officielle pour faire les tests
+                // On utilise exactement la version 8.5 pour les tests
                 docker { image 'php:8.5-cli' }
             }
             steps {
                 sh 'php -v'
-                // Ici on pourrait ajouter 'php artisan test' si tu as des tests
-                echo "Tests unitaires validés."
+                // Vérification de la syntaxe du code
+                sh 'find . -name "*.php" -print0 | xargs -0 -n1 php -l'
+                echo "Analyse syntaxique terminée avec succès."
             }
         }
 
-        stage('3. Construction de l'image') {
+        stage('3. Dockerize') {
             steps {
-                // On construit l'image Docker
+                // Construction de l'image avec le Dockerfile ci-dessus
                 sh "docker build -t ${DOCKER_USER}/${IMAGE_NAME}:${env.BUILD_ID} ."
                 sh "docker tag ${DOCKER_USER}/${IMAGE_NAME}:${env.BUILD_ID} ${DOCKER_USER}/${IMAGE_NAME}:latest"
             }
         }
 
-        stage('4. Push vers Docker Hub') {
+        stage('4. Push Registry') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'docker-hub-login', passwordVariable: 'PASS', usernameVariable: 'USER')]) {
                     sh "echo \$PASS | docker login -u \$USER --password-stdin"
@@ -44,17 +44,11 @@ pipeline {
             }
         }
 
-        stage('5. Déploiement Staging') {
+        stage('5. Deploy') {
             steps {
-                // On déploie avec docker-compose
+                // Déploiement via Docker Compose
                 sh "docker compose up -d --force-recreate"
-                echo "Application Laravel déployée !"
             }
         }
-    }
-
-    post {
-        success { echo "Pipeline terminé avec succès !" }
-        failure { echo "Échec du pipeline. Vérifiez les logs." }
     }
 }
