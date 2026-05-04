@@ -17,7 +17,7 @@ pipeline {
         stage('2. Build & Tests') {
             agent {
                 // On utilise une image PHP officielle pour faire les tests
-                docker { image 'php:8.2-cli' }
+                docker { image 'php:8.5-cli' }
             }
             steps {
                 sh 'php -v'
