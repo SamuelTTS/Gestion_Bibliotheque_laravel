@@ -67,7 +67,7 @@ pipeline {
                 echo "╔══════════════════════════════════╗"
                 echo "║   STAGE 3 — PHP Lint             ║"
                 echo "╚══════════════════════════════════╝"
-                sh "docker run --rm -v /var/jenkins_home/workspace/devops:/app -w /app php:8.5-fpm-alpine find . -name '*.php' -exec php -l {} \\;"
+                sh "docker run --rm -v /var/jenkins_home/workspace/devops:/app -w /app php:8.2-fpm-alpine find . -name '*.php' -exec php -l {} \\;"
             }
         }
 
