@@ -6,28 +6,23 @@ pipeline {
     }
 
     environment {
-        REGISTRY         = "registry:5000"
-        IMAGE_NAME       = "${REGISTRY}/laravel-app"
-        // Correction : Gestion plus sûre du tag de commit
-        IMAGE_TAG        = "${env.GIT_COMMIT.take(7)}"
-        DOCKER_NETWORK   = "devops-network"
-        STAGING_PORT     = "8081"
-        PROD_PORT        = "8000"
-        NOTIFY_EMAIL     = "stchablintete@gmail.com"
-
-        // DB Staging
-        DB_HOST          = "mysql-staging"
-        DB_DATABASE      = "laravel_staging"
-        DB_USERNAME      = "laravel"
-        DB_PASSWORD      = "root"
+        REGISTRY        = "registry:5000"
+        IMAGE_NAME      = "${REGISTRY}/laravel-app"
+        // On s'assure que GIT_COMMIT existe (fallback sur BUILD_NUMBER si vide)
+        IMAGE_TAG       = "${env.GIT_COMMIT ? env.GIT_COMMIT.take(7) : env.BUILD_NUMBER}"
+        DOCKER_NETWORK  = "devops-network"
+        STAGING_PORT    = "8081"
+        PROD_PORT       = "8000"
         
-        // Correction : Clé d'application pour éviter l'erreur 500
-        APP_KEY          = "base64:uP8SjVf7R6v7Z9S6K8J3W4L5M6N7P8Q9R0T1U2V3W4X=" 
+        // DB Config
+        DB_USERNAME     = "laravel"
+        DB_PASSWORD     = "root"
+        APP_KEY         = "base64:uP8SjVf7R6v7Z9S6K8J3W4L5M6N7P8Q9R0T1U2V3W4X=" 
     }
 
     options {
-        timeout(time: 10, unit: 'MINUTES')
-        buildDiscarder(logRotator(numToKeepStr: '90'))
+        timeout(time: 15, unit: 'MINUTES') // Augmenté un peu car PHP est lent à compiler
+        buildDiscarder(logRotator(numToKeepStr: '10'))
         disableConcurrentBuilds()
         timestamps()
     }
@@ -41,69 +36,70 @@ pipeline {
 
         stage('Code Quality — PHP Lint') {
             steps {
-                // Correction : Utilisation de ${WORKSPACE} pour la portabilité
-                sh "docker run --rm -v ${WORKSPACE}:/app -w /app php:8.5-fpm-alpine find . -name '*.php' -exec php -l {} \\;"
+                // On utilise l'image CLI pour scanner le code
+                sh "docker run --rm -v ${WORKSPACE}:/app -w /app php:8.5-cli-alpine find . -name '*.php' -exec php -l {} \\;"
             }
         }
 
         stage('Docker Build') {
             steps {
-                sh '''
-                    docker build \
-                        --no-cache \
-                        --target production \
-                        --build-arg BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
-                        -t ${IMAGE_NAME}:${IMAGE_TAG} \
-                        -t ${IMAGE_NAME}:latest \
-                        .
-                '''
+                script {
+                    // Suppression du --no-cache pour gagner du temps au quotidien
+                    sh """
+                        docker build \
+                            --target production \
+                            --build-arg BUILD_DATE=\$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
+                            -t ${IMAGE_NAME}:${IMAGE_TAG} \
+                            -t ${IMAGE_NAME}:latest \
+                            .
+                    """
+                }
             }
         }
 
         stage('Push Registry') {
             steps {
-                sh '''
+                sh """
                     docker push ${IMAGE_NAME}:${IMAGE_TAG}
                     docker push ${IMAGE_NAME}:latest
-                '''
+                """
             }
         }
 
         stage('Deploy Staging') {
             steps {
-                sh '''
-                    # Suppression propre des anciens conteneurs
+                sh """
                     docker rm -f laravel-staging 2>/dev/null || true
-
                     docker run -d \
                         --name laravel-staging \
                         --network ${DOCKER_NETWORK} \
                         -p ${STAGING_PORT}:9000 \
                         -e APP_ENV=staging \
-                        -e APP_DEBUG=true \
                         -e APP_KEY=${APP_KEY} \
                         -e DB_CONNECTION=mysql \
-                        -e DB_HOST=${DB_HOST} \
-                        -e DB_DATABASE=${DB_DATABASE} \
+                        -e DB_HOST=mysql-staging \
+                        -e DB_DATABASE=laravel_staging \
                         -e DB_USERNAME=${DB_USERNAME} \
                         -e DB_PASSWORD=${DB_PASSWORD} \
                         --restart unless-stopped \
                         ${IMAGE_NAME}:${IMAGE_TAG}
-                '''
+                """
             }
         }
 
         stage('Integration Tests') {
             steps {
                 script {
-                    // Correction : Attendre que Laravel soit prêt avant de tester
-                    sh 'sleep 10'
+                    echo "⏳ Attente du démarrage des services..."
+                    sleep 10
                     try {
+                        // Test de connexion DB + Version
+                        sh "docker exec laravel-staging php artisan migrate:status"
                         sh "docker exec laravel-staging php artisan --version"
-                        echo "✅ Laravel est opérationnel"
+                        echo "✅ Staging est opérationnel"
                     } catch (Exception e) {
                         sh "docker logs laravel-staging"
-                        error "❌ Laravel n'a pas démarré correctement"
+                        error "❌ Les tests d'intégration ont échoué"
                     }
                 }
             }
@@ -111,13 +107,11 @@ pipeline {
 
         stage('Deploy Production') {
             when { branch 'main' }
-            input {
-                message "🚀 Déployer en PRODUCTION ?"
-                ok "✅ Confirmer"
-                submitter "admin"
-            }
             steps {
-                sh '''
+                // L'input bloque le pipeline jusqu'à validation manuelle
+                input message: "🚀 Déployer en PRODUCTION ?", ok: "Confirmer"
+                
+                sh """
                     docker rm -f laravel-prod 2>/dev/null || true
                     docker run -d \
                         --name laravel-prod \
@@ -133,25 +127,15 @@ pipeline {
                         -e DB_PASSWORD=${DB_PASSWORD} \
                         --restart unless-stopped \
                         ${IMAGE_NAME}:${IMAGE_TAG}
-                '''
+                """
             }
         }
     }
 
     post {
         always {
-            // Correction : Nettoyage uniquement des images inutilisées ("dangling")
+            // Nettoyage des images de build pour éviter de saturer le disque de l'agent
             sh 'docker image prune -f'
         }
-        /*success {
-            mail to: "${NOTIFY_EMAIL}",
-                 subject: "✅ Build Réussi: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                 body: "Le déploiement de ${IMAGE_NAME}:${IMAGE_TAG} est terminé."
-        }
-        failure {
-            mail to: "${NOTIFY_EMAIL}",
-                 subject: "❌ Build Échoué: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                 body: "Vérifiez les logs ici : ${env.BUILD_URL}"
-        }*/
     }
 }
