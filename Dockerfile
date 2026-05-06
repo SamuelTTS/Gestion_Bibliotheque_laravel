@@ -1,7 +1,7 @@
 # ==========================================
 # STAGE 1 : Builder (Installation des dépendances)
 # ==========================================
-FROM php:8.5-fpm-alpine as builder
+FROM php:8.5-fpm-alpine AS builder
 
 WORKDIR /app
 
@@ -23,11 +23,20 @@ COPY . .
 RUN npm install && npm run build
 # Finalisation de l'autoloader et des scripts Laravel
 RUN composer dump-autoload --optimize --no-dev
+FROM node:20-alpine AS assets
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build
+
+# Then in your main builder stage, you can just copy the compiled files
+# COPY --from=assets /app/public/build ./public/build
 
 # ==========================================
 # STAGE 2 : Production (L'image finale)
 # ==========================================
-FROM php:8.5-fpm-alpine as production
+FROM php:8.5-fpm-alpine AS production
 
 LABEL maintainer="stchablintete@gmail.com"
 
