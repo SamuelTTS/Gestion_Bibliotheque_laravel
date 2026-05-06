@@ -60,25 +60,6 @@ pipeline {
             }
         }
 
-        // ─────────────────────────────────────────
-        stage('Composer Install') {
-            steps {
-                echo "╔══════════════════════════════════╗"
-                echo "║   STAGE 2 — Composer Install     ║"
-                echo "╚══════════════════════════════════╝"
-                sh '''
-                    docker run --rm \
-                        -v $(pwd):/app \
-                        -w /app \
-                        composer:latest \
-                        composer install \
-                            --no-dev \
-                            --prefer-dist \
-                            --no-interaction \
-                            --optimize-autoloader
-                '''
-            }
-        }
 
         // ─────────────────────────────────────────
         stage('Code Quality — PHP Lint') {
