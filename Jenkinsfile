@@ -143,7 +143,7 @@ pipeline {
             // Correction : Nettoyage uniquement des images inutilisées ("dangling")
             sh 'docker image prune -f'
         }
-        success {
+        /*success {
             mail to: "${NOTIFY_EMAIL}",
                  subject: "✅ Build Réussi: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                  body: "Le déploiement de ${IMAGE_NAME}:${IMAGE_TAG} est terminé."
@@ -152,6 +152,6 @@ pipeline {
             mail to: "${NOTIFY_EMAIL}",
                  subject: "❌ Build Échoué: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                  body: "Vérifiez les logs ici : ${env.BUILD_URL}"
-        }
+        }*/
     }
 }
