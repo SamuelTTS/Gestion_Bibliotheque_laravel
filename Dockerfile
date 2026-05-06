@@ -48,12 +48,7 @@ RUN apk add --no-cache --virtual .build-deps \
     icu-dev \
     zlib-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    # On installe les extensions une par une ou par petits groupes stables
-    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd \
-    && docker-php-ext-install zip \
-    && docker-php-ext-install intl \
-    # On force l'activation de l'opcache natif au lieu de tenter de le re-compiler
-    && docker-php-ext-enable opcache \
+    && docker-php-ext-install -j$(nproc) pdo_mysql mbstring exif pcntl bcmath gd zip intl \
     && apk del .build-deps
 
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
