@@ -144,7 +144,7 @@ pipeline {
 
                     # Vérifier que le conteneur tourne bien
                     if docker ps | grep -q laravel-staging; then
-                        echo "✅ Staging déployé sur http://localhost:${STAGING_PORT}"
+                        echo "✅ Staging déployé sur http://registry:${STAGING_PORT}"
                     else
                         echo "❌ Echec du déploiement staging"
                         docker logs laravel-staging
