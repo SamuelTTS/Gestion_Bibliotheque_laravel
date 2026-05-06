@@ -238,7 +238,7 @@ pipeline {
     post {
         success {
             echo "✅ Pipeline complet en succès !"
-           /* mail to: "${NOTIFY_EMAIL}",
+            mail to: "${NOTIFY_EMAIL}",
                  subject: "✅ [Jenkins] Build réussi — ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                  body: """
 ╔══════════════════════════════════════════╗
@@ -287,5 +287,5 @@ Durée    : ${currentBuild.durationString}
                 curl -s http://localhost:5000/v2/laravel-app/tags/list
             '''
         }
-    }*/
+    }
 }
