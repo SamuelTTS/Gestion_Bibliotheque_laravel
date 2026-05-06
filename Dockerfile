@@ -1,7 +1,7 @@
 # ==========================================
 # STAGE 1 : Builder (Installation des dépendances)
 # ==========================================
-FROM php:8.2-cli-alpine as builder
+FROM php:8.5-fpm-alpine as builder
 
 WORKDIR /app
 
@@ -27,7 +27,7 @@ RUN composer dump-autoload --optimize --no-dev
 # ==========================================
 # STAGE 2 : Production (L'image finale)
 # ==========================================
-FROM php:8.2-fpm-alpine as production
+FROM php:8.5-fpm-alpine as production
 
 LABEL maintainer="stchablintete@gmail.com"
 
