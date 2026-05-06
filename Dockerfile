@@ -25,10 +25,10 @@ RUN composer dump-autoload --optimize --no-dev
 
 
 
+
 FROM php:8.5-fpm-alpine AS production
 
 WORKDIR /var/www
-
 
 RUN apk add --no-cache \
     libpng \
@@ -40,30 +40,17 @@ RUN apk add --no-cache \
     bash \
     zlib
 
-
 RUN apk add --no-cache --virtual .build-deps $PHPIZE_DEPS \
-    libpng-dev libjpeg-turbo-dev freetype-dev libzip-dev oniguruma-dev icu-dev zlib-dev
-
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
-
-RUN docker-php-ext-install zip
-
-RUN docker-php-ext-install intl
-
-RUN docker-php-ext-install opcache
-
-RUN apk del .build-deps
+    libpng-dev libjpeg-turbo-dev freetype-dev libzip-dev oniguruma-dev icu-dev zlib-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j$(nproc) pdo_mysql mbstring exif pcntl bcmath gd intl zip \
+    # FIX OPCACHE : On utilise 'enable' au lieu de 'install' pour éviter le bug de stat modules/*
+    && docker-php-ext-enable opcache \
+    && apk del .build-deps
 
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 
-RUN echo "opcache.memory_consumption=128" > $PHP_INI_DIR/conf.d/opcache.ini \
-    && echo "opcache.interned_strings_buffer=8" >> $PHP_INI_DIR/conf.d/opcache.ini \
-    && echo "opcache.max_accelerated_files=4000" >> $PHP_INI_DIR/conf.d/opcache.ini \
-    && echo "opcache.revalidate_freq=2" >> $PHP_INI_DIR/conf.d/opcache.ini \
-    && echo "opcache.enable_cli=1" >> $PHP_INI_DIR/conf.d/opcache.ini \
-    && echo "opcache.jit=tracing" >> $PHP_INI_DIR/conf.d/opcache.ini \
-    && echo "opcache.jit_buffer_size=64M" >> $PHP_INI_DIR/conf.d/opcache.ini
+RUN printf "opcache.memory_consumption=128\nopcache.interned_strings_buffer=8\nopcache.max_accelerated_files=4000\nopcache.revalidate_freq=2\nopcache.enable_cli=1\nopcache.jit=tracing\nopcache.jit_buffer_size=64M\n" > $PHP_INI_DIR/conf.d/docker-php-ext-opcache.ini
 
 COPY --from=builder --chown=www-data:www-data /app /var/www
 
@@ -78,4 +65,3 @@ USER www-data
 EXPOSE 9000
 
 CMD ["php-fpm"]
-
