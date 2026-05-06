@@ -42,7 +42,7 @@ pipeline {
         stage('Code Quality — PHP Lint') {
             steps {
                 // Correction : Utilisation de ${WORKSPACE} pour la portabilité
-                sh "docker run --rm -v ${WORKSPACE}:/app -w /app php:8.2-fpm-alpine find . -name '*.php' -exec php -l {} \\;"
+                sh "docker run --rm -v ${WORKSPACE}:/app -w /app php:8.5-fpm-alpine find . -name '*.php' -exec php -l {} \\;"
             }
         }
 
