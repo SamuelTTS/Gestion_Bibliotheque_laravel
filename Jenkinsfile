@@ -67,30 +67,7 @@ pipeline {
                 echo "╔══════════════════════════════════╗"
                 echo "║   STAGE 3 — PHP Lint             ║"
                 echo "╚══════════════════════════════════╝"
-                sh '''
-                    docker run --rm \
-                        -v $(pwd):/app \
-                        -w /app \
-                        php:8.5-cli \
-                        sh -c "
-                            echo 'Vérification syntaxique PHP 8.5...'
-                            ERRORS=0
-                            for file in \$(find app/ routes/ config/ database/ -name '*.php'); do
-                                result=\$(php -l \$file 2>&1)
-                                if echo \$result | grep -q 'Parse error'; then
-                                    echo '❌ ERREUR : ' \$file
-                                    echo \$result
-                                    ERRORS=\$((ERRORS+1))
-                                fi
-                            done
-                            if [ \$ERRORS -gt 0 ]; then
-                                echo \"Total erreurs : \$ERRORS\"
-                                exit 1
-                            else
-                                echo '✅ Aucune erreur de syntaxe détectée'
-                            fi
-                        "
-                '''
+                sh "docker run --rm -v /var/jenkins_home/workspace/devops:/app -w /app php:8.5-fpm-alpine find . -name '*.php' -exec php -l {} \\;"
             }
         }
 
