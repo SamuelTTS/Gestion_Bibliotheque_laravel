@@ -1,7 +1,7 @@
 # ================================================
 # STAGE 1 — Build & installation des dépendances
 # ================================================
-FROM php:8.5-cli AS builder
+FROM php:8.2-cli AS builder
 
 LABEL maintainer="stchablintete@gmail.com"
 LABEL app="laravel-app"
@@ -10,7 +10,8 @@ LABEL stage="builder"
 # Variables de build
 ARG COMPOSER_FLAGS="--no-dev --no-scripts --no-autoloader --prefer-dist --no-interaction"
 
-# Installation des dépendances système + extensions PHP pour Laravel + MySQL
+# Installation des dépendances système + extensions PHP
+# Note: PHP 8.5 n'existe pas encore officiellement en version stable, utilisation de 8.2 ou 8.3 recommandée.
 RUN apt-get update && apt-get install -y --no-install-recommends \
         git \
         curl \
@@ -20,8 +21,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libpng-dev \
         libonig-dev \
         libxml2-dev \
+        libfreetype6-dev \
+        libjpeg62-turbo-dev \
         default-libmysqlclient-dev \
-    && docker-php-ext-install \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j$(nproc) \
         pdo \
         pdo_mysql \
         mbstring \
@@ -33,25 +37,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Récupérer Composer depuis son image officielle
+# Récupérer Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /app
 
-# Copier uniquement les fichiers de dépendances en premier
-# (optimisation cache Docker : si composer.json ne change pas, cette couche est réutilisée)
+# Optimisation cache Docker
 COPY composer.json composer.lock ./
-
-# Installer les dépendances sans les packages de développement
 RUN composer install $COMPOSER_FLAGS
 
-# Copier tout le code source
+# Copier le code source
 COPY . .
 
-# Générer l'autoloader optimisé pour la production
+# Générer l'autoloader optimisé
 RUN composer dump-autoload --optimize --no-dev
 
-# Nettoyer les fichiers inutiles en production
+# Nettoyage des fichiers inutiles
 RUN rm -rf tests/ \
            .env.example \
            .git/ \
@@ -61,20 +62,32 @@ RUN rm -rf tests/ \
 # ================================================
 # STAGE 2 — Image de production légère (Alpine)
 # ================================================
-FROM php:8.5-fpm-alpine AS production
+FROM php:8.2-fpm-alpine AS production
 
 LABEL maintainer="stchablintete@gmail.com"
 LABEL app="laravel-app"
 LABEL stage="production"
 
-# Extensions PHP nécessaires en production avec MySQL
+# Résolution de l'erreur "cp: can't stat 'modules/*'" : 
+# 1. On installe les librairies de RUNTIME (nécessaires pour exécuter PHP)
+# 2. On utilise .build-deps pour les librairies de COMPILATION (supprimées après)
 RUN apk add --no-cache \
+        libzip \
+        libpng \
+        libjpeg-turbo \
+        freetype \
+        oniguruma \
+        libxml2 \
+        mysql-client \
+    && apk add --no-cache --virtual .build-deps \
         libzip-dev \
         libpng-dev \
+        libjpeg-turbo-dev \
+        freetype-dev \
         oniguruma-dev \
         libxml2-dev \
-        mysql-client \
-    && docker-php-ext-install \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j$(nproc) \
         pdo \
         pdo_mysql \
         mbstring \
@@ -82,29 +95,28 @@ RUN apk add --no-cache \
         bcmath \
         gd \
         xml \
-        opcache
+        opcache \
+    && apk del .build-deps
 
 WORKDIR /var/www/html
 
-# Copier uniquement ce qui est nécessaire depuis le builder
+# Copier l'application depuis le builder
 COPY --from=builder /app .
 
-# Permissions Laravel obligatoires
-RUN chown -R www-data:www-data \
-        /var/www/html/storage \
-        /var/www/html/bootstrap/cache \
-    && chmod -R 775 \
-        /var/www/html/storage \
-        /var/www/html/bootstrap/cache
+# Permissions Laravel
+RUN chown -R www-data:www-data storage bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache
 
-# Configuration PHP-FPM optimisée pour la production
-RUN echo "opcache.enable=1"                    >> /usr/local/etc/php/conf.d/opcache.ini \
-    && echo "opcache.memory_consumption=256"   >> /usr/local/etc/php/conf.d/opcache.ini \
-    && echo "opcache.max_accelerated_files=20000" >> /usr/local/etc/php/conf.d/opcache.ini \
-    && echo "opcache.validate_timestamps=0"    >> /usr/local/etc/php/conf.d/opcache.ini \
-    && echo "opcache.revalidate_freq=0"        >> /usr/local/etc/php/conf.d/opcache.ini
+# Configuration OPcache
+RUN { \
+        echo 'opcache.enable=1'; \
+        echo 'opcache.memory_consumption=256'; \
+        echo 'opcache.max_accelerated_files=20000'; \
+        echo 'opcache.validate_timestamps=0'; \
+        echo 'opcache.revalidate_freq=0'; \
+    } > /usr/local/etc/php/conf.d/opcache-optimized.ini
 
-# Variables d'environnement par défaut (surchargeables au docker run)
+# Variables d'environnement
 ENV APP_ENV=production \
     APP_DEBUG=false \
     LOG_CHANNEL=stderr \
@@ -115,7 +127,7 @@ ENV APP_ENV=production \
     DB_USERNAME=root \
     DB_PASSWORD=root
 
-# Healthcheck : vérifie que PHP-FPM répond correctement
+# Healthcheck
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
     CMD php-fpm -t || exit 1
 
