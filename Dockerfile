@@ -59,8 +59,13 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
 
 # Optimisation de la configuration PHP pour la production
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
-COPY docker/php/opcache.ini $PHP_INI_DIR/conf.d/opcache.ini
-
+# Au lieu de COPY, on crée le fichier directement pour éviter l'erreur si le dossier n'existe pas
+RUN echo "opcache.memory_consumption=128" > $PHP_INI_DIR/conf.d/opcache.ini \
+    && echo "opcache.interned_strings_buffer=8" >> $PHP_INI_DIR/conf.d/opcache.ini \
+    && echo "opcache.max_accelerated_files=4000" >> $PHP_INI_DIR/conf.d/opcache.ini \
+    && echo "opcache.revalidate_freq=2" >> $PHP_INI_DIR/conf.d/opcache.ini \
+    && echo "opcache.fast_shutdown=1" >> $PHP_INI_DIR/conf.d/opcache.ini \
+    && echo "opcache.enable_cli=1" >> $PHP_INI_DIR/conf.d/opcache.ini
 # Copie du code depuis le stage builder
 COPY --from=builder --chown=www-data:www-data /app /var/www
 
