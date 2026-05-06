@@ -1,6 +1,4 @@
-# ==========================================
-# STAGE 1 : Builder
-# ==========================================
+
 FROM php:8.5-cli-alpine AS builder
 
 WORKDIR /app
@@ -26,9 +24,11 @@ RUN composer dump-autoload --optimize --no-dev
 
 
 
+
 FROM php:8.5-fpm-alpine AS production
 
 WORKDIR /var/www
+
 
 RUN apk add --no-cache \
     libpng \
@@ -37,23 +37,23 @@ RUN apk add --no-cache \
     libzip \
     icu-libs \
     oniguruma \
-    bash
+    bash \
+    zlib
 
-RUN apk add --no-cache --virtual .build-deps \
-    $PHPIZE_DEPS \
-    libpng-dev \
-    libjpeg-turbo-dev \
-    freetype-dev \
-    libzip-dev \
-    oniguruma-dev \
-    icu-dev \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath \
-    && docker-php-ext-install gd \
-    && docker-php-ext-install zip \
-    && docker-php-ext-install intl \
-    && docker-php-ext-install opcache \
-    && apk del .build-deps
+
+RUN apk add --no-cache --virtual .build-deps $PHPIZE_DEPS \
+    libpng-dev libjpeg-turbo-dev freetype-dev libzip-dev oniguruma-dev icu-dev zlib-dev
+
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
+
+RUN docker-php-ext-install zip
+
+RUN docker-php-ext-install intl
+
+RUN docker-php-ext-install opcache
+
+RUN apk del .build-deps
 
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 
@@ -78,3 +78,4 @@ USER www-data
 EXPOSE 9000
 
 CMD ["php-fpm"]
+
