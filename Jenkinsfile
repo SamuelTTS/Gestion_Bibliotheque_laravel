@@ -6,7 +6,7 @@ pipeline {
     }
 
     environment {
-        REGISTRY        = "registry:5000"
+        REGISTRY        = "127.0.0.1:5000"
         IMAGE_NAME      = "${REGISTRY}/laravel-app"
         // On s'assure que GIT_COMMIT existe (fallback sur BUILD_NUMBER si vide)
         IMAGE_TAG       = "${env.GIT_COMMIT ? env.GIT_COMMIT.take(7) : env.BUILD_NUMBER}"
@@ -47,6 +47,7 @@ pipeline {
                     // Suppression du --no-cache pour gagner du temps au quotidien
                     sh """
                         docker build \
+                            --network ${DOCKER_NETWORK} \
                             --target production \
                             --build-arg BUILD_DATE=\$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
                             -t ${IMAGE_NAME}:${IMAGE_TAG} \
