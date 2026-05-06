@@ -47,7 +47,6 @@ pipeline {
                     // Suppression du --no-cache pour gagner du temps au quotidien
                     sh """
                         docker build \
-                            --network ${DOCKER_NETWORK} \
                             --target production \
                             --build-arg BUILD_DATE=\$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
                             -t ${IMAGE_NAME}:${IMAGE_TAG} \
