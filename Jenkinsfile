@@ -73,9 +73,8 @@ pipeline {
                     docker rm -f laravel-staging 2>/dev/null || true
                     docker run -d \
                         --name laravel-staging \
-                        --entrypoint /bin/sh \
                         --network ${DOCKER_NETWORK} \
-                        -w /var/www \
+                        -w /var/www/html \
                         -p ${STAGING_PORT}:9000 \
                         -e APP_ENV=staging \
                         -e APP_KEY=${APP_KEY} \
@@ -95,25 +94,19 @@ pipeline {
         stage('Integration Tests') {
             steps {
                 script {
-                    echo "------- Le conteneur est stable, on répare -------"
-                    // Suppression du cache qui cause le crash
-                    sh "docker exec laravel-staging rm -rf /var/www/bootstrap/cache/config.php /var/www/bootstrap/cache/services.php /var/www/bootstrap/cache/packages.php"
-                    
-                    // On vérifie où on est et ce qu'on a
-                    sh "docker exec laravel-staging ls -la /var/www"
+                    echo "⏳ Attente de démarrage de PHP-FPM..."
+                    sleep 10
                     
                     try {
-                        echo "------- Tentative de commande Artisan -------"
-                        // On force la génération d'un nouveau cache propre
-                        sh "docker exec laravel-staging pwd"
-                        sh "docker exec laravel-staging ls -R /var/www"
-                        sh "docker exec laravel-staging php artisan config:cache"
+                        echo "------- Configuration de l'application -------"
+                        // On lance les commandes directement puisque le WORKDIR est bon
+                        sh "docker exec laravel-staging php artisan config:clear"
                         sh "docker exec laravel-staging php artisan migrate --force"
                         
-                        echo "------- Tests -------"
+                        echo "------- Exécution des Tests PHPUnit -------"
                         sh "docker exec laravel-staging php vendor/bin/phpunit"
                         
-                        echo "✅ Enfin réussi !"
+                        echo "✅ Tests réussis !"
                     } catch (Exception e) {
                         echo "------- Logs du conteneur en cas d'erreur -------"
                         sh "docker logs laravel-staging"
@@ -133,6 +126,7 @@ pipeline {
                     docker run -d \
                         --name laravel-prod \
                         --network ${DOCKER_NETWORK} \
+                        -w /var/www/html \
                         -p ${PROD_PORT}:9000 \
                         -e APP_ENV=production \
                         -e APP_DEBUG=false \
@@ -145,10 +139,8 @@ pipeline {
                         --restart unless-stopped \
                         ${IMAGE_NAME}:${IMAGE_TAG}
                 """
-                echo "🚀 Déploiement en production terminé sur le port ${PROD_PORT}"
             }
         }
-    }
 
     post {
         always {
