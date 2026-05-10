@@ -96,15 +96,23 @@ pipeline {
                     echo "⏳ Attente du démarrage des services..."
                     sleep 10
                     try {
-                        echo "------- Nettoyage des caches et Migration -------"
-                        // Suppression manuelle des fichiers de cache pour éviter l'erreur Pail/ServiceProvider
-                        
+                        stage('Integration Tests') {
+            steps {
+                script {
+                    echo "⏳ Attente de stabilisation..."
+                    sleep 10 
+                    try {
+                        // Le conteneur ne crash plus, donc ces commandes vont passer :
                         sh "docker exec laravel-staging php artisan config:clear"
                         sh "docker exec laravel-staging php artisan migrate --force"
-                        
-                        echo "------- Exécution des tests PHPUnit -------"
-                        // On lance PHPUnit qui est présent dans l'image de staging
-                        sh "docker exec laravel-staging php vendor/bin/phpunit --do-not-cache-result"
+                        sh "docker exec laravel-staging php vendor/bin/phpunit"
+                    } catch (Exception e) {
+                        sh "docker logs laravel-staging"
+                        error "❌ Tests échoués"
+                    }
+                }
+            }
+        }
                         
                         echo "✅ Tests réussis !"
                     } catch (Exception e) {
