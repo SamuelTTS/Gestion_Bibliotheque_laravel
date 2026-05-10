@@ -38,6 +38,8 @@ RUN printf "opcache.enable=1\nopcache.enable_cli=1\nopcache.memory_consumption=1
 
 COPY --from=production-builder --chown=www-data:www-data /app /var/www
 
+RUN chmod +x /var/www/artisan
+
 RUN mkdir -p /var/www/storage/framework/sessions \
     /var/www/storage/framework/views \
     /var/www/storage/framework/cache \
