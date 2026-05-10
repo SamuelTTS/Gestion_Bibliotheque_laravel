@@ -95,6 +95,12 @@ pipeline {
                     sleep 10
                     try {
                         echo "------- Démarrage des tests d'intégration sur Staging -------"
+
+                        echo "------- Installation des dépendances de test -------"
+                        // On force l'installation de PHPUnit à l'intérieur du conteneur de staging
+                        sh "docker exec laravel-staging composer install --dev --no-interaction --no-progress"
+
+                        echo "------- Exécution des tests -------"
                         // Test de connexion DB + Version
                         sh "docker exec laravel-staging php artisan migrate --force"
                         sh "docker exec laravel-staging php artisan migrate:status"
@@ -103,8 +109,8 @@ pipeline {
                         // 4. Exécution des tests (Pest ou PHPUnit)
                         // On lance les tests via le binaire direct de phpunit
                         // On ajoute --do-not-cache-result pour éviter les problèmes de droits d'écriture
-                        sh "docker exec laravel-staging php vendor/phpunit/phpunit/phpunit --version"
-                                
+                        sh "docker exec laravel-staging ./vendor/bin/phpunit --do-not-cache-result"
+                        echo "✅ Tests réussis !"
                         echo "✅ Staging est opérationnel"
                     } catch (Exception e) {
                         sh "docker logs laravel-staging"
