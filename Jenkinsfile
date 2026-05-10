@@ -123,7 +123,7 @@ pipeline {
                         -e APP_KEY=${APP_KEY} \
                         -e DB_CONNECTION=mysql \
                         -e DB_HOST=mysql \
-                        -e DB_DATABASE=laravel-prod \
+                        -e DB_DATABASE=biblio \
                         -e DB_USERNAME=${DB_USERNAME} \
                         -e DB_PASSWORD=${DB_PASSWORD} \
                         --restart unless-stopped \
