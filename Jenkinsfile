@@ -105,6 +105,8 @@ pipeline {
                     try {
                         echo "------- Tentative de commande Artisan -------"
                         // On force la génération d'un nouveau cache propre
+                        sh "docker exec laravel-staging pwd"
+                        sh "docker exec laravel-staging ls -R /var/www"
                         sh "docker exec laravel-staging php artisan config:cache"
                         sh "docker exec laravel-staging php artisan migrate --force"
                         
