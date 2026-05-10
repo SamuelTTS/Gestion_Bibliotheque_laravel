@@ -92,30 +92,22 @@ pipeline {
             steps {
                 script {
                     echo "⏳ Attente du démarrage des services..."
-                    sleep 10
-                    try {
-                        echo "------- Démarrage des tests d'intégration sur Staging -------"
-
-                        echo "------- Installation des dépendances de test -------"
-                        // On force l'installation de PHPUnit à l'intérieur du conteneur de staging
-                        sh "docker exec laravel-staging composer install --dev --no-interaction --no-progress"
-
-                        echo "------- Exécution des tests -------"
-                        // Test de connexion DB + Version
-                        sh "docker exec laravel-staging php artisan migrate --force"
-                        sh "docker exec laravel-staging php artisan migrate:status"
-                        sh "docker exec laravel-staging php artisan --version"
-                                                
-                        // 4. Exécution des tests (Pest ou PHPUnit)
-                        // On lance les tests via le binaire direct de phpunit
-                        // On ajoute --do-not-cache-result pour éviter les problèmes de droits d'écriture
-                        sh "docker exec laravel-staging ./vendor/bin/phpunit --do-not-cache-result"
-                        echo "✅ Tests réussis !"
-                        echo "✅ Staging est opérationnel"
-                    } catch (Exception e) {
-                        sh "docker logs laravel-staging"
-                        error "❌ Les tests d'intégration ont échoué"
-                    }
+            sleep 10
+            try {
+                echo "------- Démarrage des tests d'intégration sur Staging -------"
+                
+                // Pas besoin de 'composer install', c'est déjà dans l'image !
+                
+                sh "docker exec laravel-staging php artisan migrate --force"
+                
+                echo "------- Exécution des tests -------"
+                sh "docker exec laravel-staging ./vendor/bin/phpunit --do-not-cache-result"
+                
+                echo "✅ Tests réussis !"
+            } catch (Exception e) {
+                sh "docker logs laravel-staging"
+                error "❌ Les tests d'intégration ont échoué"
+            }
                 }
             }
         }
