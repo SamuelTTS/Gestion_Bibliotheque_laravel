@@ -12,6 +12,8 @@ COPY . .
 RUN npm run build
 RUN composer dump-autoload --optimize
 
+RUN rm -f bootstrap/cache/services.php bootstrap/cache/packages.php
+
 FROM builder AS tester
 WORKDIR /app
 
