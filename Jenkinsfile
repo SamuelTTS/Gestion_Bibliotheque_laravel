@@ -8,8 +8,6 @@ pipeline {
     environment {
         REGISTRY        = "127.0.0.1:5000"
         IMAGE_NAME      = "${REGISTRY}/laravel-app"
-        
-        // On s'assure que GIT_COMMIT existe (fallback sur BUILD_NUMBER si vide)
         IMAGE_TAG       = "${env.GIT_COMMIT ? env.GIT_COMMIT.take(7) : env.BUILD_NUMBER}"
         DOCKER_NETWORK  = "devops-network"
         STAGING_PORT    = "8081"
@@ -22,7 +20,7 @@ pipeline {
     }
 
     options {
-        timeout(time: 15, unit: 'MINUTES') // Augmenté un peu car PHP est lent à compiler
+        timeout(time: 15, unit: 'MINUTES')
         buildDiscarder(logRotator(numToKeepStr: '10'))
         disableConcurrentBuilds()
         timestamps()
@@ -37,7 +35,6 @@ pipeline {
 
         stage('Code Quality — PHP Lint') {
             steps {
-                // On utilise l'image CLI pour scanner le code
                 sh "docker run --rm -v ${WORKSPACE}:/app -w /app php:8.5-cli-alpine find . -name '*.php' -exec php -l {} \\;"
             }
         }
@@ -45,7 +42,10 @@ pipeline {
         stage('Docker Build') {
             steps {
                 script {
-                    // Suppression du --no-cache pour gagner du temps au quotidien
+                    echo "------- Construction de l'image de STAGING (avec dev dependencies) -------"
+                    sh "docker build --target builder -t ${IMAGE_NAME}:staging ."
+                    
+                    echo "------- Construction de l'image de PRODUCTION (optimisée) -------"
                     sh """
                         docker build \
                             --target production \
@@ -84,7 +84,7 @@ pipeline {
                         -e DB_USERNAME=${DB_USERNAME} \
                         -e DB_PASSWORD=${DB_PASSWORD} \
                         --restart unless-stopped \
-                        ${IMAGE_NAME}:${IMAGE_TAG}
+                        ${IMAGE_NAME}:staging
                 """
             }
         }
@@ -95,19 +95,15 @@ pipeline {
                     echo "⏳ Attente du démarrage des services..."
                     sleep 10
                     try {
-                        echo "------- Configuration de l'environnement de test -------"
-
-                        // Ajoute cette ligne juste AVANT le config:clear
+                        echo "------- Nettoyage des caches et Migration -------"
+                        // Suppression manuelle des fichiers de cache pour éviter l'erreur Pail/ServiceProvider
                         sh "docker exec laravel-staging rm -f bootstrap/cache/services.php bootstrap/cache/packages.php"
-                        sh "docker exec laravel-staging php artisan config:clear"
-                        // On vide les caches au cas où
-                        sh "docker exec laravel-staging php artisan config:clear"
                         
-                        // Migration de la base laravel_staging
+                        sh "docker exec laravel-staging php artisan config:clear"
                         sh "docker exec laravel-staging php artisan migrate --force"
                         
                         echo "------- Exécution des tests PHPUnit -------"
-                        // Utilisation du chemin complet vers le binaire pour éviter l'erreur 'not found'
+                        // On lance PHPUnit qui est présent dans l'image de staging
                         sh "docker exec laravel-staging php vendor/bin/phpunit --do-not-cache-result"
                         
                         echo "✅ Tests réussis !"
@@ -123,7 +119,6 @@ pipeline {
         stage('Deploy Production') {
             when { branch 'main' }
             steps {
-                // L'input bloque le pipeline jusqu'à validation manuelle
                 input message: "🚀 Déployer en PRODUCTION ?", ok: "Confirmer"
                 
                 sh """
@@ -143,13 +138,13 @@ pipeline {
                         --restart unless-stopped \
                         ${IMAGE_NAME}:${IMAGE_TAG}
                 """
+                echo "🚀 Déploiement en production terminé sur le port ${PROD_PORT}"
             }
         }
     }
 
     post {
         always {
-            // Nettoyage des images de build pour éviter de saturer le disque de l'agent
             sh 'docker image prune -f'
         }
     }
