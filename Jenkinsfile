@@ -101,8 +101,10 @@ pipeline {
                         sh "docker exec laravel-staging php artisan --version"
                                                 
                         // 4. Exécution des tests (Pest ou PHPUnit)
-                        sh "docker exec laravel-staging php artisan test"
-                        
+                        // On lance les tests via le binaire direct de phpunit
+                        // On ajoute --do-not-cache-result pour éviter les problèmes de droits d'écriture
+                        sh "docker exec laravel-staging ./vendor/bin/phpunit --do-not-cache-result"
+                                
                         echo "✅ Staging est opérationnel"
                     } catch (Exception e) {
                         sh "docker logs laravel-staging"
