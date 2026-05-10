@@ -85,7 +85,6 @@ pipeline {
                         -e DB_PASSWORD=${DB_PASSWORD} \
                         --restart unless-stopped \
                         ${IMAGE_NAME}:staging \
-                        -c "while true; do sleep 3600; done"
                 """
                 //sh -c "rm -f bootstrap/cache/*.php && php-fpm"
             }
