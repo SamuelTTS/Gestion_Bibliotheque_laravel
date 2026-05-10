@@ -84,7 +84,7 @@ pipeline {
                         -e DB_USERNAME=${DB_USERNAME} \
                         -e DB_PASSWORD=${DB_PASSWORD} \
                         --restart unless-stopped \
-                        ${IMAGE_NAME}:staging \
+                        ${IMAGE_NAME}:latest \
                 """
                 //sh -c "rm -f bootstrap/cache/*.php && php-fpm"
             }
