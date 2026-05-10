@@ -21,7 +21,7 @@ WORKDIR /app
 RUN composer install --no-dev --no-scripts --optimize-autoloader
 
 FROM php:8.5-fpm-alpine AS production
-WORKDIR /var/www
+WORKDIR /var/www/html
 
 RUN apk add --no-cache \
     libpng libjpeg-turbo freetype libzip icu-libs oniguruma bash zlib
@@ -36,16 +36,17 @@ RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 
 RUN printf "opcache.enable=1\nopcache.enable_cli=1\nopcache.memory_consumption=128\nopcache.interned_strings_buffer=8\nopcache.max_accelerated_files=4000\nopcache.revalidate_freq=2\nopcache.jit=tracing\nopcache.jit_buffer_size=64M\n" > $PHP_INI_DIR/conf.d/docker-php-ext-opcache.ini
 
-COPY --from=production-builder --chown=www-data:www-data /app /var/www
+COPY --from=production-builder --chown=www-data:www-data /app .
 
-RUN chmod +x /var/www/artisan
+USER root
+RUN chmod +x artisan
 
-RUN mkdir -p /var/www/storage/framework/sessions \
-    /var/www/storage/framework/views \
-    /var/www/storage/framework/cache \
-    /var/www/storage/logs \
-    && chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache \
-    && chmod -R 775 /var/www/storage /var/www/bootstrap/cache
+RUN mkdir -p storage/framework/sessions \
+    storage/framework/views \
+    storage/framework/cache \
+    storage/logs \
+    && chown -R www-data:www-data storage bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache
 
 USER www-data
 
