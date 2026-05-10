@@ -100,14 +100,7 @@ pipeline {
                         sh "docker exec laravel-staging php artisan config:clear"
                         sh "docker exec laravel-staging php artisan migrate --force"
                         sh "docker exec laravel-staging php vendor/bin/phpunit"
-                    } catch (Exception e) {
-                        sh "docker logs laravel-staging"
-                        error "❌ Tests échoués"
-                    }
-                }
-            }
-        }
-                        
+                              
                         echo "✅ Tests réussis !"
                     } catch (Exception e) {
                         echo "------- Logs du conteneur en cas d'erreur -------"
