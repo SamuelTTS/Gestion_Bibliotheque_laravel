@@ -99,9 +99,7 @@ pipeline {
                         sh "docker exec laravel-staging php artisan migrate --force"
                         sh "docker exec laravel-staging php artisan migrate:status"
                         sh "docker exec laravel-staging php artisan --version"
-                        // 3. Optionnel : Remplir la base avec des données de test
-                        sh "docker exec laravel-staging php artisan db:seed --force"
-                        
+                                                
                         // 4. Exécution des tests (Pest ou PHPUnit)
                         sh "docker exec laravel-staging php artisan test"
                         
