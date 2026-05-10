@@ -8,6 +8,7 @@ pipeline {
     environment {
         REGISTRY        = "127.0.0.1:5000"
         IMAGE_NAME      = "${REGISTRY}/laravel-app"
+        
         // On s'assure que GIT_COMMIT existe (fallback sur BUILD_NUMBER si vide)
         IMAGE_TAG       = "${env.GIT_COMMIT ? env.GIT_COMMIT.take(7) : env.BUILD_NUMBER}"
         DOCKER_NETWORK  = "devops-network"
@@ -15,7 +16,7 @@ pipeline {
         PROD_PORT       = "8000"
         
         // DB Config
-        DB_USERNAME     = "laravel"
+        DB_USERNAME     = "root"
         DB_PASSWORD     = "root"
         APP_KEY         = "base64:uP8SjVf7R6v7Z9S6K8J3W4L5M6N7P8Q9R0T1U2V3W4X=" 
     }
@@ -77,8 +78,8 @@ pipeline {
                         -e APP_ENV=staging \
                         -e APP_KEY=${APP_KEY} \
                         -e DB_CONNECTION=mysql \
-                        -e DB_HOST=mysql-staging \
-                        -e DB_DATABASE=laravel_staging \
+                        -e DB_HOST=mysql \
+                        -e DB_DATABASE=biblio \
                         -e DB_USERNAME=${DB_USERNAME} \
                         -e DB_PASSWORD=${DB_PASSWORD} \
                         --restart unless-stopped \
@@ -121,8 +122,8 @@ pipeline {
                         -e APP_DEBUG=false \
                         -e APP_KEY=${APP_KEY} \
                         -e DB_CONNECTION=mysql \
-                        -e DB_HOST=mysql-prod \
-                        -e DB_DATABASE=laravel_prod \
+                        -e DB_HOST=mysql \
+                        -e DB_DATABASE=biblio \
                         -e DB_USERNAME=${DB_USERNAME} \
                         -e DB_PASSWORD=${DB_PASSWORD} \
                         --restart unless-stopped \
