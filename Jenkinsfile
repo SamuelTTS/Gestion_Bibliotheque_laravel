@@ -94,9 +94,17 @@ pipeline {
                     echo "⏳ Attente du démarrage des services..."
                     sleep 10
                     try {
+                        echo "------- Démarrage des tests d'intégration sur Staging -------"
                         // Test de connexion DB + Version
+                        sh "docker exec laravel-staging php artisan migrate --force"
                         sh "docker exec laravel-staging php artisan migrate:status"
                         sh "docker exec laravel-staging php artisan --version"
+                        // 3. Optionnel : Remplir la base avec des données de test
+                        sh "docker exec laravel-staging php artisan db:seed --force"
+                        
+                        // 4. Exécution des tests (Pest ou PHPUnit)
+                        sh "docker exec laravel-staging php artisan test"
+                        
                         echo "✅ Staging est opérationnel"
                     } catch (Exception e) {
                         sh "docker logs laravel-staging"
