@@ -96,6 +96,10 @@ pipeline {
                     sleep 10
                     try {
                         echo "------- Configuration de l'environnement de test -------"
+
+                        // Ajoute cette ligne juste AVANT le config:clear
+                        sh "docker exec laravel-staging rm -f bootstrap/cache/services.php bootstrap/cache/packages.php"
+                        sh "docker exec laravel-staging php artisan config:clear"
                         // On vide les caches au cas où
                         sh "docker exec laravel-staging php artisan config:clear"
                         
