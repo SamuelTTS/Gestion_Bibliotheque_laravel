@@ -93,22 +93,25 @@ pipeline {
             steps {
                 script {
                     echo "⏳ Attente du démarrage des services..."
-            sleep 10
-            try {
-                echo "------- Démarrage des tests d'intégration sur Staging -------"
-                
-                // Pas besoin de 'composer install', c'est déjà dans l'image !
-                
-                sh "docker exec laravel-staging php /var/www/artisan migrate --force"
-                
-                echo "------- Exécution des tests -------"
-                sh "docker exec laravel-staging ./vendor/bin/phpunit --do-not-cache-result"
-                
-                echo "✅ Tests réussis !"
-            } catch (Exception e) {
-                sh "docker logs laravel-staging"
-                error "❌ Les tests d'intégration ont échoué"
-            }
+                    sleep 10
+                    try {
+                        echo "------- Configuration de l'environnement de test -------"
+                        // On vide les caches au cas où
+                        sh "docker exec laravel-staging php artisan config:clear"
+                        
+                        // Migration de la base laravel_staging
+                        sh "docker exec laravel-staging php artisan migrate --force"
+                        
+                        echo "------- Exécution des tests PHPUnit -------"
+                        // Utilisation du chemin complet vers le binaire pour éviter l'erreur 'not found'
+                        sh "docker exec laravel-staging php vendor/bin/phpunit --do-not-cache-result"
+                        
+                        echo "✅ Tests réussis !"
+                    } catch (Exception e) {
+                        echo "------- Logs du conteneur en cas d'erreur -------"
+                        sh "docker logs laravel-staging"
+                        error "❌ Les tests d'intégration ont échoué"
+                    }
                 }
             }
         }
