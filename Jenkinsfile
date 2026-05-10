@@ -86,6 +86,7 @@ pipeline {
                         --restart unless-stopped \
                         ${IMAGE_NAME}:staging
                 """
+                sh -c "rm -f bootstrap/cache/*.php && php-fpm"
             }
         }
 
@@ -97,7 +98,6 @@ pipeline {
                     try {
                         echo "------- Nettoyage des caches et Migration -------"
                         // Suppression manuelle des fichiers de cache pour éviter l'erreur Pail/ServiceProvider
-                        sh "docker exec laravel-staging rm -f bootstrap/cache/services.php bootstrap/cache/packages.php"
                         
                         sh "docker exec laravel-staging php artisan config:clear"
                         sh "docker exec laravel-staging php artisan migrate --force"
