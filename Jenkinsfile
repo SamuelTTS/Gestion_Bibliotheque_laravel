@@ -74,6 +74,7 @@ pipeline {
                     docker run -d \
                         --name laravel-staging \
                         --network ${DOCKER_NETWORK} \
+                        -w /var/www \
                         -p ${STAGING_PORT}:9000 \
                         -e APP_ENV=staging \
                         -e APP_KEY=${APP_KEY} \
@@ -98,7 +99,7 @@ pipeline {
                 
                 // Pas besoin de 'composer install', c'est déjà dans l'image !
                 
-                sh "docker exec laravel-staging php artisan migrate --force"
+                sh "docker exec laravel-staging php /var/www/artisan migrate --force"
                 
                 echo "------- Exécution des tests -------"
                 sh "docker exec laravel-staging ./vendor/bin/phpunit --do-not-cache-result"
