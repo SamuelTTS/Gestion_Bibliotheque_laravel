@@ -93,12 +93,6 @@ pipeline {
         stage('Integration Tests') {
             steps {
                 script {
-                    echo "⏳ Attente du démarrage des services..."
-                    sleep 10
-                    try {
-                        stage('Integration Tests') {
-            steps {
-                script {
                     echo "⏳ Attente de stabilisation..."
                     sleep 10 
                     try {
