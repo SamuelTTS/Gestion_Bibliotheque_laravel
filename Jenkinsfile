@@ -118,6 +118,7 @@ pipeline {
         stage('Deploy Production') {
             when { branch 'main' }
             steps {
+                echo"-------attente de confirmation---------"
                 input message: "🚀 Déployer en PRODUCTION ?", ok: "Confirmer"
                 
                 sh """
