@@ -106,6 +106,7 @@ pipeline {
                        // sh "docker exec laravel-staging php vendor/bin/phpunit"
                         
                         echo "✅ Tests réussis !"
+                        echo "Branch actuelle: ${env.BRANCH_NAME}"
                     } catch (Exception e) {
                         echo "------- Logs du conteneur en cas d'erreur -------"
                         sh "docker logs laravel-staging"
@@ -116,8 +117,8 @@ pipeline {
         }
 
         stage('Deploy Production') {
-            echo "Branch actuelle: ${env.BRANCH_NAME}"
-            when { branch 'main' }
+            
+            //when { branch 'main' }
             steps {
                 
                 echo"-------attente de confirmation---------"
