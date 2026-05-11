@@ -116,8 +116,10 @@ pipeline {
         }
 
         stage('Deploy Production') {
+            echo "Branch actuelle: ${env.BRANCH_NAME}"
             when { branch 'main' }
             steps {
+                
                 echo"-------attente de confirmation---------"
                 input message: "🚀 Déployer en PRODUCTION ?", ok: "Confirmer"
                 
