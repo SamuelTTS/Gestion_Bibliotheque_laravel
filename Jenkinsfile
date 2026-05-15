@@ -144,13 +144,14 @@ pipeline {
 
                     echo "🌐 Lancement Nginx..."
                     docker run -d \
-                        --name nginx-prod \
-                        --network ${DOCKER_NETWORK} \
-                        -p ${PROD_PORT}:80 \
-                        -v ${WORKSPACE}:/var/www/html \
-                        -v ${WORKSPACE}/default.conf:/etc/nginx/conf.d/default.conf \
-                        --restart unless-stopped \
-                        nginx:alpine
+                       --name nginx-prod \
+                       --network ${DOCKER_NETWORK} \
+                       -p ${PROD_PORT}:80 \
+                       -v ${WORKSPACE}:/var/www/html \
+                       -v ${WORKSPACE}/nginx:/etc/nginx/conf.d \
+                       --restart unless-stopped \
+                       nginx:alpine
+
             
                     echo "✅ Déploiement terminé !"
                 """
