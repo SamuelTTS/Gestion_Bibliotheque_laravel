@@ -125,6 +125,7 @@ pipeline {
                 input message: "🚀 Déployer en PRODUCTION ?", ok: "Confirmer"
                 
                 sh """
+                    ls -l ${WORKSPACE}/nginx
                     docker rm -f laravel-prod 2>/dev/null || true
                     docker run -d \
                         --name laravel-prod \
