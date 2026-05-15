@@ -163,7 +163,7 @@ pipeline {
             
                     echo "✅ Déploiement terminé !"
                 """
-            }
+            
         }
     }
 
