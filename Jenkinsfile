@@ -130,7 +130,6 @@ pipeline {
                         --name laravel-prod \
                         --network ${DOCKER_NETWORK} \
                         -w /var/www/html \
-                        -p ${PROD_PORT}:9000 \
                         -e APP_ENV=production \
                         -e APP_DEBUG=false \
                         -e APP_KEY=${APP_KEY} \
