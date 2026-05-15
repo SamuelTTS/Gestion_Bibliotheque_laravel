@@ -145,14 +145,20 @@ pipeline {
                         ${IMAGE_NAME}:${IMAGE_TAG}
 
                     echo "🌐 Lancement Nginx..."
+                    
+                    docker rm -f nginx-prod 2>/dev/null || true
+                    
                     docker run -d \
-                       --name nginx-prod \
-                       --network ${DOCKER_NETWORK} \
-                       -p ${PROD_PORT}:80 \
-                       -v ${WORKSPACE}:/var/www/html \
-                       -v ${WORKSPACE}/nginx:/etc/nginx/conf.d \
-                       --restart unless-stopped \
-                       nginx:alpine
+                      --name nginx-prod \
+                      --network ${DOCKER_NETWORK} \
+                      -p ${PROD_PORT}:80 \
+                      nginx:alpine
+                    
+                    echo "📥 Copie de la config Nginx..."
+                    docker cp ${WORKSPACE}/nginx/default.conf nginx-prod:/etc/nginx/conf.d/default.conf
+                    
+                    echo "🔄 Restart Nginx..."
+                    docker restart nginx-prod
 
             
                     echo "✅ Déploiement terminé !"
