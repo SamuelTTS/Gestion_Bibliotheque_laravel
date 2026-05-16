@@ -173,14 +173,19 @@ pipeline {
             withCredentials([usernamePassword(credentialsId: 'mail-creds', passwordVariable: 'GMAIL_PASSWORD', usernameVariable: 'GMAIL_USERNAME')]) {
                 emailext(
                     to: "${EMAILS}",
+                    replyTo: "${GMAIL_USERNAME}",
+                    mailhost: 'smtp.gmail.com',
+                    port: 465,
+                    charset: 'UTF-8',
                     subject: "✅ SUCCESS: ${JOB_NAME} #${BUILD_NUMBER}",
                     body: """
-                        🎉 SUCCESS
+                        🎉 Le Pipeline s'est exécuté avec succès !
                         
                         Projet: ${JOB_NAME}
                         Build: ${BUILD_NUMBER}
+                        Statut: SUCCESS
                         
-                        Lien du build: ${BUILD_URL}
+                        Consulter les logs complets ici : ${BUILD_URL}
                     """
                 )
             }
@@ -190,21 +195,26 @@ pipeline {
             withCredentials([usernamePassword(credentialsId: 'mail-creds', passwordVariable: 'GMAIL_PASSWORD', usernameVariable: 'GMAIL_USERNAME')]) {
                 emailext(
                     to: "${EMAILS}",
+                    replyTo: "${GMAIL_USERNAME}",
+                    mailhost: 'smtp.gmail.com',
+                    port: 465,
+                    charset: 'UTF-8',
                     subject: "❌ FAILURE: ${JOB_NAME} #${BUILD_NUMBER}",
                     body: """
-                        🚨 FAILURE
+                        🚨 Attention : Échec détecté dans le pipeline.
                         
                         Projet: ${JOB_NAME}
                         Build: ${BUILD_NUMBER}
+                        Statut: FAILURE
                         
-                        Lien du build: ${BUILD_URL}
+                        Veuillez analyser les causes de l'erreur ici : ${BUILD_URL}
                     """
                 )
             }
         }
         
         always {
-            echo "📌 Nettoyage Docker..."
+            echo "📌 Nettoyage des anciennes images Docker suspendues..."
             sh 'docker image prune -f || true'
         }
     }
