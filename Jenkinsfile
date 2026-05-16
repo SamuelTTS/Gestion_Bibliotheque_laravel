@@ -170,7 +170,7 @@ pipeline {
 
     post {
         always {
-        withCredentials([usernamePassword(credentialsId: 'gmail-creds', passwordVariable: 'GMAIL_PASSWORD', usernameVariable: 'GMAIL_USERNAME')]) {
+        withCredentials([usernamePassword(credentialsId: 'mail-creds', passwordVariable: 'GMAIL_PASSWORD', usernameVariable: 'GMAIL_USERNAME')]) {
     success {
         emailext(
             to: "${EMAILS}",
