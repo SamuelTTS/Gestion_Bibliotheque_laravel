@@ -169,24 +169,25 @@ pipeline {
     }
 
     post {
-        always {
-        withCredentials([usernamePassword(credentialsId: 'mail-creds', passwordVariable: 'GMAIL_PASSWORD', usernameVariable: 'GMAIL_USERNAME')]) {
-    success {
-        emailext(
-            to: "${EMAILS}",
-            subject: "✅ SUCCESS: ${JOB_NAME} #${BUILD_NUMBER}",
-            body: """
-            🎉 SUCCESS
-            
-            Projet: ${JOB_NAME}
-            Build: ${BUILD_NUMBER}
-            
-            ${BUILD_URL}
-        """
+        success {
+            withCredentials([usernamePassword(credentialsId: 'mail-creds', passwordVariable: 'GMAIL_PASSWORD', usernameVariable: 'GMAIL_USERNAME')]) {
+                emailext(
+                    to: "${EMAILS}",
+                    subject: "✅ SUCCESS: ${JOB_NAME} #${BUILD_NUMBER}",
+                    body: """
+                        🎉 SUCCESS
+                        
+                        Projet: ${JOB_NAME}
+                        Build: ${BUILD_NUMBER}
+                        
+                        Lien du build: ${BUILD_URL}
+                    """
                 )
             }
+        }
         
-            failure {
+        failure {
+            withCredentials([usernamePassword(credentialsId: 'mail-creds', passwordVariable: 'GMAIL_PASSWORD', usernameVariable: 'GMAIL_USERNAME')]) {
                 emailext(
                     to: "${EMAILS}",
                     subject: "❌ FAILURE: ${JOB_NAME} #${BUILD_NUMBER}",
@@ -196,16 +197,14 @@ pipeline {
                         Projet: ${JOB_NAME}
                         Build: ${BUILD_NUMBER}
                         
-                        ${BUILD_URL}
-                        """
+                        Lien du build: ${BUILD_URL}
+                    """
                 )
             }
-            
-     always {
+        }
+        
+        always {
             echo "📌 Nettoyage Docker..."
-             sh 'docker image prune -f'
-          }
+            sh 'docker image prune -f || true'
+        }
     }
- }
-}
-}
