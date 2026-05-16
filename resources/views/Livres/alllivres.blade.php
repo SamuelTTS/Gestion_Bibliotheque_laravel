@@ -4,219 +4,498 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ma Bibliothèque</title>
+    <title>MyLibrary Pro</title>
+
     <style>
-        /* Variables de couleurs pour une maintenance facile */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
         :root {
-            --primary: #4f46e5;
-            --primary-hover: #4338ca;
+            --primary: #6366f1;
+            --primary-dark: #4338ca;
+            --secondary: #8b5cf6;
+
             --success: #10b981;
             --danger: #ef4444;
-            --warning: #f59e0b;
-            --text-main: #1e293b;
-            --text-muted: #64748b;
-            --bg-body: #f8fafc;
-            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+
+            --bg: #eef2ff;
+            --card: rgba(255, 255, 255, 0.88);
+
+            --text: #0f172a;
+            --muted: #64748b;
+
+            --border: rgba(226, 232, 240, 0.7);
+
+            --shadow:
+                0 10px 25px rgba(15, 23, 42, 0.08),
+                0 4px 12px rgba(15, 23, 42, 0.05);
+
+            --radius: 20px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
         body {
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            background-color: var(--bg-body);
-            margin: 0;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
             padding: 40px 20px;
-            color: var(--text-main);
+
+            background:
+                radial-gradient(circle at top left,
+                    rgba(99, 102, 241, 0.2),
+                    transparent 25%),
+                radial-gradient(circle at bottom right,
+                    rgba(139, 92, 246, 0.18),
+                    transparent 20%),
+                var(--bg);
+
+            color: var(--text);
         }
+
+        /* =========================
+           LOGOUT FIXÉ
+        ========================= */
+
+        .logout-container {
+            position: fixed;
+            top: 20px;
+            right: 25px;
+            z-index: 999;
+        }
+
+        .btn-logout {
+            background: linear-gradient(135deg, #ef4444, #b91c1c);
+            color: white;
+
+            padding: 12px 20px;
+
+            border-radius: 14px;
+
+            font-weight: 700;
+            text-decoration: none;
+
+            box-shadow:
+                0 10px 25px rgba(239, 68, 68, 0.25);
+
+            transition: all 0.25s ease;
+        }
+
+        .btn-logout:hover {
+            transform: translateY(-3px);
+
+            box-shadow:
+                0 18px 35px rgba(239, 68, 68, 0.35);
+        }
+
+        /* =========================
+           CONTAINER
+        ========================= */
 
         .container {
-            max-width: 1000px;
+            max-width: 1150px;
             margin: 0 auto 25px auto;
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
+
+            background: var(--card);
+
+            backdrop-filter: blur(12px);
+
+            border-radius: var(--radius);
+
+            padding: 28px;
+
             box-shadow: var(--shadow);
+
+            border: 1px solid rgba(255, 255, 255, 0.6);
         }
 
-        /* --- Barre de recherche améliorée --- */
+        /* =========================
+           SEARCH BAR
+        ========================= */
+
         #search-form {
             display: flex;
-            gap: 10px;
+            gap: 12px;
             align-items: center;
+            flex-wrap: wrap;
         }
 
         #search-input {
             flex: 1;
-            padding: 12px 15px;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            outline: none;
-            transition: border-color 0.2s;
+            min-width: 240px;
+
+            padding: 14px 18px;
+
+            border-radius: 14px;
+            border: 1px solid var(--border);
+
+            background: white;
+
+            font-size: 0.95rem;
+
+            transition: all 0.25s ease;
         }
 
         #search-input:focus {
+            outline: none;
+
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+
+            box-shadow:
+                0 0 0 4px rgba(99, 102, 241, 0.15);
+
+            transform: translateY(-1px);
         }
 
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
+        /* =========================
+           BUTTONS
+        ========================= */
 
-        /* --- Base commune pour Boutons ET Liens --- */
         button,
         .btn,
-        .btn-add {
+        .btn-add,
+        .btn-reset {
             display: inline-flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 0.9rem;
-            text-decoration: none;
-            /* Enlève le souligné des liens <a> */
+
+            padding: 12px 18px;
+
+            border-radius: 14px;
+
             border: none;
+
             cursor: pointer;
-            transition: all 0.2s ease;
-            font-family: inherit;
-            white-space: nowrap;
+
+            font-weight: 600;
+            font-size: 0.92rem;
+
+            text-decoration: none;
+
+            transition: all 0.25s ease;
         }
 
-        /* --- Couleurs et Variantes --- */
         .btn-primary,
         .btn-add {
-            background-color: #4f46e5;
-            color: white !important;
-            /* Force la couleur même si c'est un lien */
+            background:
+                linear-gradient(135deg,
+                    var(--primary),
+                    var(--secondary));
+
+            color: white;
+
+            box-shadow:
+                0 8px 18px rgba(99, 102, 241, 0.25);
         }
 
         .btn-primary:hover,
         .btn-add:hover {
-            background-color: #4338ca;
-            transform: translateY(-1px);
+            transform: translateY(-3px);
+
+            box-shadow:
+                0 14px 30px rgba(99, 102, 241, 0.35);
         }
 
-        /* Style spécifique pour le bouton Réinitialiser */
         .btn-reset {
-            background-color: #5a6ebe;
-            /* Gris très clair */
-            color: #322f3c;
-            /* Texte gris ardoise */
-            border: 1px solid #e2e8f0;
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-weight: 600;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            transition: all 0.2s;
+            background: white;
+
+            color: var(--muted);
+
+            border: 1px solid var(--border);
         }
 
         .btn-reset:hover {
-            background-color: #4f1bdd;
-            color: #ffffff;
+            background: #eef2ff;
+
+            color: var(--primary);
         }
 
         .btn-edit {
-            background-color: #fef3c7;
-            color: #92400e;
-            padding: 6px 12px;
+            background: rgba(245, 158, 11, 0.12);
+            color: #b45309;
+
+            padding: 8px 14px;
         }
 
         .btn-edit:hover {
-            background-color: #ff5e00;
-            color: #fef3c7;
+            background: #f59e0b;
+            color: white;
         }
 
         .btn-delete {
-            background-color: #fee2e2;
-            color: #991b1b;
-            padding: 6px 12px;
+            background: rgba(239, 68, 68, 0.12);
+            color: #b91c1c;
+
+            padding: 8px 14px;
         }
 
         .btn-delete:hover {
-            background-color: #ff0000;
-            color: #fee2e2;
+            background: var(--danger);
+            color: white;
         }
 
-        /* --- Tableau Moderne --- */
+        /* =========================
+           HEADER PERSONNALISÉ
+        ========================= */
+
+        .header {
+            position: relative;
+
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+
+            padding: 35px;
+
+            border-radius: 25px;
+
+            overflow: hidden;
+
+            background:
+                linear-gradient(135deg,
+                    rgba(99, 102, 241, 0.95),
+                    rgba(139, 92, 246, 0.92));
+
+            box-shadow:
+                0 15px 35px rgba(99, 102, 241, 0.25);
+        }
+
+        .header::before {
+            content: "";
+
+            position: absolute;
+
+            width: 320px;
+            height: 320px;
+
+            background: rgba(255, 255, 255, 0.08);
+
+            border-radius: 50%;
+
+            top: -120px;
+            right: -80px;
+        }
+
+        .header h1 {
+            position: relative;
+
+            font-size: 2.4rem;
+            font-weight: 800;
+
+            color: white;
+
+            z-index: 2;
+        }
+
+        .subtitle {
+            position: relative;
+
+            margin-top: 8px;
+
+            color: rgba(255, 255, 255, 0.85);
+
+            font-size: 0.95rem;
+
+            z-index: 2;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            z-index: 2;
+        }
+
+        /* =========================
+           TABLE
+        ========================= */
+
         table {
-            text-align: center;
             width: 100%;
+            max-width: 1150px;
+
+            margin: 0 auto;
+
             border-collapse: collapse;
-            margin-top: 15px;
+
+            overflow: hidden;
+
+            border-radius: var(--radius);
+
+            background: rgba(255, 255, 255, 0.9);
+
+            box-shadow: var(--shadow);
         }
 
-        tbody tr:hover {
-            background: #f1f5f9;
+        thead {
+            background:
+                linear-gradient(135deg,
+                    var(--primary),
+                    var(--secondary));
         }
 
         th {
+            padding: 18px 16px;
+
             text-align: center;
-            background-color: #f8fafc;
-            color: var(--text-muted);
-            padding: 14px;
-            font-size: 0.75rem;
+
+            color: white;
+
+            font-size: 0.8rem;
+            font-weight: 700;
+
             text-transform: uppercase;
-            letter-spacing: 0.05em;
-            border-bottom: 2px solid #e2e8f0;
+            letter-spacing: 1px;
         }
 
         td {
+            padding: 18px 16px;
+
             text-align: center;
-            padding: 16px 14px;
-            border-bottom: 1px solid #f1f5f9;
+
+            border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+
+            transition: 0.2s ease;
         }
 
-        td:last-child {
-            display: flex;
-            gap: 8px;
+        tbody tr {
+            transition: all 0.25s ease;
+        }
+
+        tbody tr:hover {
+            background: rgba(99, 102, 241, 0.05);
+            transform: scale(1.002);
         }
 
         tr:last-child td {
             border-bottom: none;
         }
 
+        td:last-child {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        /* =========================
+           BADGE
+        ========================= */
+
         .badge {
-            background: #ecfdf5;
-            color: #065f46;
-            padding: 4px 10px;
-            border-radius: 9999px;
+            background:
+                linear-gradient(135deg,
+                    #dcfce7,
+                    #bbf7d0);
+
+            color: #166534;
+
+            padding: 6px 12px;
+
+            border-radius: 999px;
+
             font-weight: 700;
             font-size: 0.85rem;
         }
 
         .pages {
-            color: var(--text-muted);
+            color: var(--muted);
             font-style: italic;
         }
 
-        /* --- Notifications Toast --- */
+        /* =========================
+           TOAST
+        ========================= */
+
         .toast-notification {
             position: fixed;
-            top: 20px;
-            right: 20px;
-            background: var(--success);
+            top: 25px;
+            right: 25px;
+
+            background:
+                linear-gradient(135deg,
+                    var(--success),
+                    #059669);
+
             color: white;
-            padding: 16px 24px;
-            border-radius: 10px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+
+            padding: 18px 24px;
+
+            border-radius: 16px;
+
             display: flex;
             align-items: center;
             gap: 12px;
-            animation: slideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+            box-shadow:
+                0 15px 30px rgba(16, 185, 129, 0.25);
+
+            z-index: 1000;
+
+            animation: toastIn 0.5s ease;
         }
 
-        @keyframes slideIn {
+        .toast-fade-out {
+            animation: toastOut 0.5s ease forwards;
+        }
+
+        @keyframes toastIn {
             from {
-                transform: translateX(150%);
+                opacity: 0;
+                transform: translateX(120px);
             }
 
             to {
+                opacity: 1;
                 transform: translateX(0);
+            }
+        }
+
+        @keyframes toastOut {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+
+            to {
+                opacity: 0;
+                transform: translateX(120px);
+            }
+        }
+
+        /* =========================
+           RESPONSIVE
+        ========================= */
+
+        @media (max-width: 900px) {
+
+            body {
+                padding: 20px 10px;
+            }
+
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            table {
+                display: block;
+                overflow-x: auto;
+            }
+
+            td:last-child {
+                flex-direction: column;
+            }
+
+            .btn,
+            .btn-add,
+            .btn-primary,
+            .btn-reset {
+                width: 100%;
             }
         }
     </style>
@@ -224,6 +503,7 @@
 
 <body>
 
+    <!-- TOAST -->
 
     @if(session('success'))
     <div id="toast" class="toast-notification">
@@ -232,99 +512,188 @@
     </div>
     @endif
 
+    <!-- LOGOUT -->
+
+    <div class="logout-container">
+        <a href="{{route('logout')}}" class="btn-logout">
+            ⎋ Logout
+        </a>
+    </div>
+
+    <!-- SEARCH -->
+
     <div class="container">
+
         <form action="{{ route('findlivre') }}" method="POST" id="search-form">
+
             @csrf
-            <input type="text" name="research" placeholder="Rechercher un livre..." id="search-input">
 
-            <button class="btn-primary" type="submit">Rechercher</button>
+            <input type="text"
+                name="research"
+                placeholder="🔍 Rechercher un livre..."
+                id="search-input">
 
-            <a class="btn-reset" href="{{ route('alllivres') }}">Réinitialiser</a>
+            <button class="btn-primary" type="submit">
+                Rechercher
+            </button>
+
+            <a class="btn-reset" href="{{ route('alllivres') }}">
+                Réinitialiser
+            </a>
 
         </form>
     </div>
-    <div class="conainer">
-        <a href="{{route('logout')}}" class="btn-logout">Logout</a>
-    </div>
+
+    <!-- HEADER -->
 
     <div class="container">
+
         <div class="header">
-            <h1>📚 Bibliothèque Digitale</h1>
-            <a href="{{ route('formlivre') }}" class="btn-add">+ Ajouter un livre</a>
-            <a href="{{ route('adddisc') }}" class="btn-add">+ Ajouter une discipline</a>
+
+            <div>
+                <h1>📚 MyLibrary Pro</h1>
+                <p class="subtitle">
+                    Gestion moderne et intelligente de votre bibliothèque
+                </p>
+            </div>
+
+            <div class="header-actions">
+
+                <a href="{{ route('formlivre') }}" class="btn-add">
+                    + Ajouter un livre
+                </a>
+
+                <a href="{{ route('adddisc') }}" class="btn-add">
+                    + Ajouter une discipline
+                </a>
+
+            </div>
 
         </div>
+
     </div>
 
+    <!-- TABLE -->
+
     <table>
+
         <thead>
+
             <tr>
+
                 <th>ID</th>
                 <th>Titre</th>
                 <th>Auteur</th>
                 <th>Pages</th>
                 <th>Discipline</th>
                 <th>Prix</th>
+
                 @if($user == 'ad')
                 <th>Actions</th>
                 @endif
+
             </tr>
+
         </thead>
+
         <tbody>
 
             @forelse ($livres as $livre)
+
             <tr>
+
                 <td>#{{ $livre->id }}</td>
-                <td><strong>{{ $livre->titre }}</strong></td>
-                <td>{{ $livre->auteur }}</td>
-                <td class="pages">{{ $livre->nb_pages }} p.</td>
-                <td>{{ $livre->discipline->nom }}</td>
-                <td><span class="badge">{{ $livre->prix }} €</span></td>
-                @if($user == 'ad')
+
                 <td>
-                    <a href="{{ route('updateform', $livre->id) }}" class="btn btn-edit">✏️ Modifier</a>
-                    <a href="{{ route('deletelivre', $livre->id) }}" class="btn btn-delete" onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce livre {{ $livre->titre }} ?');">🗑️ Supprimer</a>
+                    <strong>{{ $livre->titre }}</strong>
                 </td>
+
+                <td>{{ $livre->auteur }}</td>
+
+                <td class="pages">
+                    {{ $livre->nb_pages }} p.
+                </td>
+
+                <td>
+                    {{ $livre->discipline->nom }}
+                </td>
+
+                <td>
+                    <span class="badge">
+                        {{ $livre->prix }} €
+                    </span>
+                </td>
+
+                @if($user == 'ad')
+
+                <td>
+
+                    <a href="{{ route('updateform', $livre->id) }}"
+                        class="btn btn-edit">
+
+                        ✏️ Modifier
+
+                    </a>
+
+                    <a href="{{ route('deletelivre', $livre->id) }}"
+                        class="btn btn-delete"
+                        onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce livre {{ $livre->titre }} ?');">
+
+                        🗑️ Supprimer
+
+                    </a>
+
+                </td>
+
                 @endif
+
             </tr>
+
             @empty
+
             <tr>
-                <td colspan="5" style="text-align: center; color: #94a3b8;"><img width="20%" height="10%" src="{{asset('images/empty.png')}}" alt="Aucun résultat"><br>Aucun livre trouvé dans la base.</td>
+
+                <td colspan="7"
+                    style="padding:40px; text-align:center; color:#94a3b8;">
+
+                    <img width="180"
+                        src="{{asset('images/empty.png')}}"
+                        alt="Aucun résultat">
+
+                    <br><br>
+
+                    Aucun livre trouvé dans la base.
+
+                </td>
+
             </tr>
+
             @endforelse
+
         </tbody>
+
     </table>
-    </div>
+
+    <!-- SCRIPT -->
 
     <script>
-        // On attend que la page soit chargée
-        setTimeout(function() {
-            let message = document.getElementById('success-message');
-            if (message) {
-                // Option 1 : Disparition brutale
-                // message.style.display = 'none';
-
-                // Option 2 : Disparition en douceur (plus joli)
-                message.style.opacity = '0';
-                setTimeout(() => message.remove(), 500); // On le retire du HTML après l'effet
-            }
-        }, 3000); // 3000 millisecondes = 3 secondes
-
-
         document.addEventListener('DOMContentLoaded', function() {
+
             const toast = document.getElementById('toast');
 
             if (toast) {
-                // Au bout de 4 secondes, on lance la sortie
+
                 setTimeout(() => {
+
                     toast.classList.add('toast-fade-out');
 
-                    // On le supprime du HTML après l'animation (0.5s)
                     setTimeout(() => toast.remove(), 500);
+
                 }, 4000);
             }
         });
     </script>
+
 </body>
 
 </html>
