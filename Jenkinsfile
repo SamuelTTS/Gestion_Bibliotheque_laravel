@@ -170,48 +170,71 @@ pipeline {
 
     post {
         success {
+
             withCredentials([usernamePassword(credentialsId: 'mail-creds', passwordVariable: 'GMAIL_PASSWORD', usernameVariable: 'GMAIL_USERNAME')]) {
+
                 emailext(
+
                     to: "${EMAILS}",
-                    replyTo: "${GMAIL_USERNAME}",
-                    mailhost: 'smtp.gmail.com',
-                    port: 465,
-                    charset: 'UTF-8',
+
                     subject: "✅ SUCCESS: ${JOB_NAME} #${BUILD_NUMBER}",
+
                     body: """
-                        🎉 Le Pipeline s'est exécuté avec succès !
+
+                        🎉 SUCCESS
+
                         
+
                         Projet: ${JOB_NAME}
+
                         Build: ${BUILD_NUMBER}
-                        Statut: SUCCESS
+
                         
-                        Consulter les logs complets ici : ${BUILD_URL}
+
+                        Lien du build: ${BUILD_URL}
+
                     """
+
                 )
+
             }
+
         }
+
         
+
         failure {
+
             withCredentials([usernamePassword(credentialsId: 'mail-creds', passwordVariable: 'GMAIL_PASSWORD', usernameVariable: 'GMAIL_USERNAME')]) {
+
                 emailext(
+
                     to: "${EMAILS}",
-                    replyTo: "${GMAIL_USERNAME}",
-                    mailhost: 'smtp.gmail.com',
-                    port: 465,
-                    charset: 'UTF-8',
+
                     subject: "❌ FAILURE: ${JOB_NAME} #${BUILD_NUMBER}",
+
                     body: """
-                        🚨 Attention : Échec détecté dans le pipeline.
+
+                        🚨 FAILURE
+
                         
+
                         Projet: ${JOB_NAME}
+
                         Build: ${BUILD_NUMBER}
-                        Statut: FAILURE
+
                         
-                        Veuillez analyser les causes de l'erreur ici : ${BUILD_URL}
+
+                        Lien du build: ${BUILD_URL}
+
                     """
+
                 )
+
             }
+
         }
+
         
         always {
             echo "📌 Nettoyage des anciennes images Docker suspendues..."
