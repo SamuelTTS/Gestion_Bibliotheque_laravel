@@ -6,6 +6,7 @@ pipeline {
     }
 
     environment {
+        EMAILS = "stchablintete@gmail.com,ahmedbintihoudjrat@gmail.com,kamanta7605@gmail.com"
         REGISTRY        = "127.0.0.1:5000"
         IMAGE_NAME      = "${REGISTRY}/laravel-app"
         IMAGE_TAG       = "${env.GIT_COMMIT ? env.GIT_COMMIT.take(7) : env.BUILD_NUMBER}"
@@ -168,8 +169,54 @@ pipeline {
     }
 
     post {
-        always {
-            sh 'docker image prune -f'
-        }
+    success {
+        mail to: "${EMAILS}",
+             subject: "✅ SUCCESS: ${JOB_NAME} #${BUILD_NUMBER}",
+             body: """
+            🎉 Le pipeline a réussi !
+            
+            📦 Projet : ${JOB_NAME}
+            🔢 Build : ${BUILD_NUMBER}
+            📊 Status : SUCCESS
+            
+            🔗 Voir les détails :
+            ${BUILD_URL}
+            """
+             }
+            
+   failure {
+            mail to: "${EMAILS}",
+                 subject: "❌ FAILURE: ${JOB_NAME} #${BUILD_NUMBER}",
+                 body: """
+            🚨 Le pipeline a échoué !
+            
+            📦 Projet : ${JOB_NAME}
+            🔢 Build : ${BUILD_NUMBER}
+            📊 Status : FAILURE
+            
+            🔗 Voir les logs :
+            ${BUILD_URL}
+            """
+                }
+            
+    unstable {
+             mail to: "${EMAILS}",
+                 subject: "⚠️ UNSTABLE: ${JOB_NAME} #${BUILD_NUMBER}",
+                 body: """
+            ⚠️ Le pipeline est instable !
+            
+            📦 Projet : ${JOB_NAME}
+            🔢 Build : ${BUILD_NUMBER}
+            📊 Status : UNSTABLE
+            
+            🔗 Voir les détails :
+            ${BUILD_URL}
+            """
+                }
+            
+     always {
+            echo "📌 Nettoyage Docker..."
+             sh 'docker image prune -f'
+          }
     }
 }
