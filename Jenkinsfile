@@ -169,76 +169,39 @@ pipeline {
     }
 
     post {
-        success {
+    success {
+        emailext(
+            to: "${EMAILS}",
+            subject: "✅ SUCCESS: ${JOB_NAME} #${BUILD_NUMBER}",
+            body: """
+🎉 SUCCESS
 
-            withCredentials([usernamePassword(credentialsId: 'mail-creds', passwordVariable: 'GMAIL_PASSWORD', usernameVariable: 'GMAIL_USERNAME')]) {
+Projet: ${JOB_NAME}
+Build: ${BUILD_NUMBER}
 
-                emailext(
-
-                    to: "${EMAILS}",
-
-                    subject: "✅ SUCCESS: ${JOB_NAME} #${BUILD_NUMBER}",
-
-                    body: """
-
-                        🎉 SUCCESS
-
-                        
-
-                        Projet: ${JOB_NAME}
-
-                        Build: ${BUILD_NUMBER}
-
-                        
-
-                        Lien du build: ${BUILD_URL}
-
-                    """
-
-                )
-
-            }
-
-        }
-
-        
-
-        failure {
-
-            withCredentials([usernamePassword(credentialsId: 'mail-creds', passwordVariable: 'GMAIL_PASSWORD', usernameVariable: 'GMAIL_USERNAME')]) {
-
-                emailext(
-
-                    to: "${EMAILS}",
-
-                    subject: "❌ FAILURE: ${JOB_NAME} #${BUILD_NUMBER}",
-
-                    body: """
-
-                        🚨 FAILURE
-
-                        
-
-                        Projet: ${JOB_NAME}
-
-                        Build: ${BUILD_NUMBER}
-
-                        
-
-                        Lien du build: ${BUILD_URL}
-
-                    """
-
-                )
-
-            }
-
-        }
-
-        
-        always {
-            echo "📌 Nettoyage des anciennes images Docker suspendues..."
-            sh 'docker image prune -f || true'
-        }
+Lien du build: ${BUILD_URL}
+"""
+        )
     }
+    
+    failure {
+        emailext(
+            to: "${EMAILS}",
+            subject: "❌ FAILURE: ${JOB_NAME} #${BUILD_NUMBER}",
+            body: """
+🚨 FAILURE
+
+Projet: ${JOB_NAME}
+Build: ${BUILD_NUMBER}
+
+Lien du build: ${BUILD_URL}
+"""
+        )
+    }
+    
+    always {
+        echo "📌 Nettoyage des anciennes images Docker suspendues..."
+        sh 'docker image prune -f || true'
+    }
+}
 }
