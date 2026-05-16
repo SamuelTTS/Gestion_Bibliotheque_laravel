@@ -172,14 +172,43 @@ pipeline {
     success {
         emailext(
             to: "${EMAILS}",
-            subject: "✅ SUCCESS: ${JOB_NAME} #${BUILD_NUMBER}",
+            subject: "✅ SUCCESS - ${JOB_NAME} #${BUILD_NUMBER}",
+            mimeType: 'text/html',
             body: """
-🎉 SUCCESS
+<!DOCTYPE html>
+<html>
+<body style="font-family: Arial; background-color:#f4f4f4; padding:20px;">
 
-Projet: ${JOB_NAME}
-Build: ${BUILD_NUMBER}
+<div style="max-width:600px; margin:auto; background:white; padding:20px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.1);">
 
-Lien du build: ${BUILD_URL}
+    <h2 style="color:green;">✅ Build SUCCESS</h2>
+
+    <table style="width:100%; border-collapse: collapse;">
+        <tr><td><b>📦 Projet</b></td><td>${JOB_NAME}</td></tr>
+        <tr><td><b>🔢 Build</b></td><td>#${BUILD_NUMBER}</td></tr>
+        <tr><td><b>🌿 Branche</b></td><td>${env.BRANCH_NAME}</td></tr>
+        <tr><td><b>👤 Auteur</b></td><td>${env.GIT_COMMITTER_NAME ?: "N/A"}</td></tr>
+        <tr><td><b>💬 Commit</b></td><td>${env.GIT_COMMIT_MESSAGE ?: "N/A"}</td></tr>
+        <tr><td><b>🔖 Commit ID</b></td><td>${env.GIT_COMMIT}</td></tr>
+        <tr><td><b>🖥️ Node</b></td><td>${NODE_NAME}</td></tr>
+        <tr><td><b>📁 Workspace</b></td><td>${WORKSPACE}</td></tr>
+        <tr><td><b>🌍 Env</b></td><td>PRODUCTION</td></tr>
+        <tr><td><b>🕒 Date</b></td><td>${new Date()}</td></tr>
+    </table>
+
+    <br>
+
+    <div style="text-align:center;">
+        <a href="${BUILD_URL}" 
+           style="background:green; color:white; padding:10px 20px; text-decoration:none; border-radius:5px;">
+           🔎 Voir le Build
+        </a>
+    </div>
+
+</div>
+
+</body>
+</html>
 """
         )
     }
@@ -187,14 +216,40 @@ Lien du build: ${BUILD_URL}
     failure {
         emailext(
             to: "${EMAILS}",
-            subject: "❌ FAILURE: ${JOB_NAME} #${BUILD_NUMBER}",
+            subject: "❌ FAILURE - ${JOB_NAME} #${BUILD_NUMBER}",
+            mimeType: 'text/html',
             body: """
-🚨 FAILURE
+<!DOCTYPE html>
+<html>
+<body style="font-family: Arial; background-color:#f4f4f4; padding:20px;">
 
-Projet: ${JOB_NAME}
-Build: ${BUILD_NUMBER}
+<div style="max-width:600px; margin:auto; background:white; padding:20px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.1);">
 
-Lien du build: ${BUILD_URL}
+    <h2 style="color:red;">❌ Build FAILED</h2>
+
+    <table style="width:100%; border-collapse: collapse;">
+        <tr><td><b>📦 Projet</b></td><td>${JOB_NAME}</td></tr>
+        <tr><td><b>🔢 Build</b></td><td>#${BUILD_NUMBER}</td></tr>
+        <tr><td><b>🌿 Branche</b></td><td>${env.BRANCH_NAME}</td></tr>
+        <tr><td><b>🔖 Commit</b></td><td>${env.GIT_COMMIT}</td></tr>
+        <tr><td><b>🕒 Date</b></td><td>${new Date()}</td></tr>
+    </table>
+
+    <br>
+
+    <p style="color:red;"><b>⚠️ Une erreur est survenue. Vérifiez les logs.</b></p>
+
+    <div style="text-align:center;">
+        <a href="${BUILD_URL}" 
+           style="background:red; color:white; padding:10px 20px; text-decoration:none; border-radius:5px;">
+           🔎 Voir les logs
+        </a>
+    </div>
+
+</div>
+
+</body>
+</html>
 """
         )
     }
