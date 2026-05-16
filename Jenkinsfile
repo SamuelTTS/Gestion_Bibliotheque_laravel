@@ -169,54 +169,43 @@ pipeline {
     }
 
     post {
+        always {
+        withCredentials([usernamePassword(credentialsId: 'gmail-creds', passwordVariable: 'GMAIL_PASSWORD', usernameVariable: 'GMAIL_USERNAME')]) {
     success {
-        mail to: "${EMAILS}",
-             subject: "✅ SUCCESS: ${JOB_NAME} #${BUILD_NUMBER}",
-             body: """
-            🎉 Le pipeline a réussi !
+        emailext(
+            to: "${EMAILS}",
+            subject: "✅ SUCCESS: ${JOB_NAME} #${BUILD_NUMBER}",
+            body: """
+            🎉 SUCCESS
             
-            📦 Projet : ${JOB_NAME}
-            🔢 Build : ${BUILD_NUMBER}
-            📊 Status : SUCCESS
+            Projet: ${JOB_NAME}
+            Build: ${BUILD_NUMBER}
             
-            🔗 Voir les détails :
             ${BUILD_URL}
-            """
-             }
-            
-   failure {
-            mail to: "${EMAILS}",
-                 subject: "❌ FAILURE: ${JOB_NAME} #${BUILD_NUMBER}",
-                 body: """
-            🚨 Le pipeline a échoué !
-            
-            📦 Projet : ${JOB_NAME}
-            🔢 Build : ${BUILD_NUMBER}
-            📊 Status : FAILURE
-            
-            🔗 Voir les logs :
-            ${BUILD_URL}
-            """
-                }
-            
-    unstable {
-             mail to: "${EMAILS}",
-                 subject: "⚠️ UNSTABLE: ${JOB_NAME} #${BUILD_NUMBER}",
-                 body: """
-            ⚠️ Le pipeline est instable !
-            
-            📦 Projet : ${JOB_NAME}
-            🔢 Build : ${BUILD_NUMBER}
-            📊 Status : UNSTABLE
-            
-            🔗 Voir les détails :
-            ${BUILD_URL}
-            """
-                }
+        """
+                )
+            }
+        
+            failure {
+                emailext(
+                    to: "${EMAILS}",
+                    subject: "❌ FAILURE: ${JOB_NAME} #${BUILD_NUMBER}",
+                    body: """
+                        🚨 FAILURE
+                        
+                        Projet: ${JOB_NAME}
+                        Build: ${BUILD_NUMBER}
+                        
+                        ${BUILD_URL}
+                        """
+                )
+            }
             
      always {
             echo "📌 Nettoyage Docker..."
              sh 'docker image prune -f'
           }
     }
+ }
+}
 }
