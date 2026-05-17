@@ -520,29 +520,7 @@
         </a>
     </div>
 
-    <!-- SEARCH -->
 
-    <div class="container">
-
-        <form action="{{ route('findlivre') }}" method="POST" id="search-form">
-
-            @csrf
-
-            <input type="text"
-                name="research"
-                placeholder="🔍 Rechercher un livre..."
-                id="search-input">
-
-            <button class="btn-primary" type="submit">
-                Rechercher
-            </button>
-
-            <a class="btn-reset" href="{{ route('alllivres') }}">
-                Réinitialiser
-            </a>
-
-        </form>
-    </div>
 
     <!-- HEADER -->
 
@@ -573,6 +551,30 @@
 
     </div>
 
+    <!-- SEARCH -->
+
+    <div class="container">
+
+        <form action="{{ route('findlivre') }}" method="POST" id="search-form">
+
+            @csrf
+
+            <input type="text"
+                name="research"
+                placeholder="🔍 Rechercher un livre..."
+                id="search-input">
+
+            <button class="btn-primary" type="submit">
+                Rechercher
+            </button>
+
+            <a class="btn-reset" href="{{ route('alllivres') }}">
+                Réinitialiser
+            </a>
+
+        </form>
+    </div>
+    
     <!-- TABLE -->
 
     <table>
