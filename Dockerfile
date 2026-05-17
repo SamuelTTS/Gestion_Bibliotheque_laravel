@@ -4,7 +4,7 @@ RUN apk add --no-cache unzip libzip-dev libpng-dev nodejs npm
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 COPY composer.json composer.lock ./
-RUN composer install --no-scripts --no-autoloader --prefer-dist
+RUN composer install --prefer-dist
 
 COPY package.json package-lock.json* ./
 RUN npm install
