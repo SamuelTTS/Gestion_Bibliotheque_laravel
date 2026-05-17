@@ -1,16 +1,19 @@
 FROM php:8.5-cli-alpine AS builder
 WORKDIR /app
+
 RUN apk add --no-cache unzip libzip-dev libpng-dev nodejs npm
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 COPY composer.json composer.lock ./
-RUN composer install --prefer-dist
+RUN composer install --prefer-dist --no-scripts --no-autoloader
+COPY . .
+RUN composer dump-autoload --optimize
 
 COPY package.json package-lock.json* ./
 RUN npm install
-COPY . .
+
 RUN npm run build
-RUN composer dump-autoload --optimize
+
 RUN rm -f bootstrap/cache/services.php bootstrap/cache/packages.php bootstrap/cache/config.php
 
 FROM builder AS tester
