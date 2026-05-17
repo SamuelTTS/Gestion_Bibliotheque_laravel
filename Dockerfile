@@ -21,8 +21,34 @@ RUN npm run build
 RUN rm -f bootstrap/cache/*.php
 
 
+
+FROM php:8.5-fpm-alpine AS staging
+WORKDIR /var/www/html
+
+COPY --from=builder /app .
+
+RUN apk add --no-cache \
+    libpng libjpeg-turbo freetype libzip icu-libs oniguruma bash zlib
+
+RUN apk add --no-cache --virtual .build-deps \
+    $PHPIZE_DEPS libpng-dev libjpeg-turbo-dev freetype-dev libzip-dev oniguruma-dev icu-dev zlib-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip intl \
+    && apk del .build-deps
+
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 775 storage bootstrap/cache
+
+USER www-data
+
+EXPOSE 9000
+CMD ["php-fpm"]
+
+
+
 FROM builder AS tester
 WORKDIR /app
+
 
 
 FROM builder AS production-builder
