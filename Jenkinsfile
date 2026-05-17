@@ -44,7 +44,7 @@ pipeline {
             steps {
                 script {
                     echo "------- Construction de l'image de STAGING (avec dev dependencies) -------"
-                    sh "docker build --target builder -t ${IMAGE_NAME}:staging ."
+                    sh "docker build --target production -t ${IMAGE_NAME}:staging ."
                     
                     echo "------- Construction de l'image de PRODUCTION (optimisée) -------"
                     sh """
