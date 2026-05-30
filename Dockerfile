@@ -11,6 +11,8 @@ RUN composer install --prefer-dist --no-scripts --no-autoloader
 
 COPY . .
 
+ENV PROMETHEUS_STORAGE_DRIVER=memory
+
 RUN composer dump-autoload --optimize
 
 COPY package.json package-lock.json* ./
