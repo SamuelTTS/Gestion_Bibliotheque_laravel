@@ -100,7 +100,7 @@ pipeline {
                     try {
                         echo "------- Configuration de l'application -------"
                         // On lance les commandes directement puisque le WORKDIR est bon
-                        docker exec -e PROMETHEUS_STORAGE_DRIVER=memory laravel-staging php artisan config:clear
+                        sh "docker exec -e PROMETHEUS_STORAGE_DRIVER=memory laravel-staging php artisan config:clear"
                         sh "docker exec -e PROMETHEUS_STORAGE_DRIVER=memory laravel-staging php artisan migrate --force"
                         echo "------- Exécution des Tests PHPUnit -------"
                         sh "docker exec -e PROMETHEUS_ENABLE=false laravel-staging php vendor/bin/phpunit"
