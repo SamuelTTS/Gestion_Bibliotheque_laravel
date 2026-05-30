@@ -103,7 +103,7 @@ pipeline {
                         sh "docker exec -e PROMETHEUS_STORAGE_DRIVER=memory laravel-staging php artisan config:clear"
                         sh "docker exec -e PROMETHEUS_STORAGE_DRIVER=memory laravel-staging php artisan migrate --force"
                         echo "------- Exécution des Tests PHPUnit -------"
-                        sh "docker exec -e PROMETHEUS_ENABLE=false laravel-staging php vendor/bin/phpunit"
+                        sh "docker exec -e PROMETHEUS_ENABLE=false -e PROMETHEUS_STORAGE_DRIVER=memory laravel-staging php vendor/bin/phpunit"
                         
                         echo "✅ Tests réussis !"
                         echo "Branch actuelle: ${env.BRANCH_NAME}"
