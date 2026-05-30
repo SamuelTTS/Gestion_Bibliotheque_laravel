@@ -101,10 +101,12 @@ pipeline {
                         echo "------- Configuration de l'application -------"
                         // On lance les commandes directement puisque le WORKDIR est bon
                         docker exec -e PROMETHEUS_STORAGE_DRIVER=memory laravel-staging php artisan config:clear
-                        sh "docker exec laravel-staging php artisan migrate --force"
-                        
+                        sh "docker exec -e PROMETHEUS_STORAGE_DRIVER=memory laravel-staging php artisan migrate --force"
+
                         echo "------- Exécution des Tests PHPUnit -------"
-                        sh "docker exec laravel-staging php vendor/bin/phpunit"
+                        
+                        // Pour les tests, le plus propre est carrément de désactiver le package avec PROMETHEUS_ENABLE=false
+                        sh "docker exec -e PROMETHEUS_ENABLE=false laravel-staging php vendor/bin/phpunit"
                         
                         echo "✅ Tests réussis !"
                         echo "Branch actuelle: ${env.BRANCH_NAME}"
