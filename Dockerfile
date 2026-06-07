@@ -25,6 +25,8 @@ RUN rm -f bootstrap/cache/*.php
 FROM php:8.5-fpm-alpine AS staging
 WORKDIR /var/www/html
 
+ENV PROMETHEUS_STORAGE_DRIVER=memory
+
 RUN apk add --no-cache \
     libpng libjpeg-turbo freetype libzip icu-libs oniguruma bash zlib
 
@@ -47,17 +49,23 @@ CMD ["php-fpm"]
 
 FROM builder AS tester
 WORKDIR /app
+ENV PROMETHEUS_STORAGE_DRIVER=memory
 
 
 
 FROM builder AS production-builder
 WORKDIR /app
+
+ENV PROMETHEUS_STORAGE_DRIVER=memory
+
 RUN composer install --no-dev --no-scripts --optimize-autoloader
 
 
 
 FROM php:8.5-fpm-alpine AS production
 WORKDIR /var/www/html
+
+ENV PROMETHEUS_STORAGE_DRIVER=memory
 
 RUN apk add --no-cache \
     libpng libjpeg-turbo freetype libzip icu-libs oniguruma bash zlib
