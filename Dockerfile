@@ -9,15 +9,15 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 COPY composer.json composer.lock ./
 RUN composer install --prefer-dist --no-scripts --no-autoloader
 
-COPY . .
-
-RUN composer dump-autoload --optimize
-
 COPY package.json package-lock.json* ./
 RUN npm install
 
-RUN npm run build
+COPY . .
 
+ENV PROMETHEUS_STORAGE_DRIVER=memory
+
+RUN composer dump-autoload --optimize
+RUN npm run build
 RUN rm -f bootstrap/cache/*.php
 
 
@@ -25,7 +25,7 @@ RUN rm -f bootstrap/cache/*.php
 FROM php:8.5-fpm-alpine AS staging
 WORKDIR /var/www/html
 
-COPY --from=builder /app .
+ENV PROMETHEUS_STORAGE_DRIVER=memory
 
 RUN apk add --no-cache \
     libpng libjpeg-turbo freetype libzip icu-libs oniguruma bash zlib
@@ -36,11 +36,12 @@ RUN apk add --no-cache --virtual .build-deps \
     && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip intl \
     && apk del .build-deps
 
+COPY --from=builder /app .
+
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 775 storage bootstrap/cache
 
 USER www-data
-
 EXPOSE 9000
 CMD ["php-fpm"]
 
@@ -48,18 +49,23 @@ CMD ["php-fpm"]
 
 FROM builder AS tester
 WORKDIR /app
+ENV PROMETHEUS_STORAGE_DRIVER=memory
 
 
 
 FROM builder AS production-builder
-
 WORKDIR /app
+
+ENV PROMETHEUS_STORAGE_DRIVER=memory
 
 RUN composer install --no-dev --no-scripts --optimize-autoloader
 
-FROM php:8.5-fpm-alpine AS production
 
+
+FROM php:8.5-fpm-alpine AS production
 WORKDIR /var/www/html
+
+ENV PROMETHEUS_STORAGE_DRIVER=memory
 
 RUN apk add --no-cache \
     libpng libjpeg-turbo freetype libzip icu-libs oniguruma bash zlib
@@ -86,7 +92,5 @@ RUN chmod +x artisan && \
     chmod -R 775 storage bootstrap/cache
 
 USER www-data
-
 EXPOSE 9000
-
 CMD ["php-fpm"]

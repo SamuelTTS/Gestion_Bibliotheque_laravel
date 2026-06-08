@@ -6,11 +6,12 @@ pipeline {
     }
 
     environment {
-        EMAILS = "stchablintete@gmail.com,ahmedbintihoudjrat@gmail.com,kamanta7605@gmail.com"
+        EMAILS          = "stchablintete@gmail.com,ahmedbintihoudjrat@gmail.com,kamanta7605@gmail.com"
         REGISTRY        = "127.0.0.1:5000"
         IMAGE_NAME      = "${REGISTRY}/laravel-app"
         IMAGE_TAG       = "${env.GIT_COMMIT ? env.GIT_COMMIT.take(7) : env.BUILD_NUMBER}"
         DOCKER_NETWORK  = "devops-network"
+        MAINTAINER_EMAILS = "stchablintete@gmail.com,ahmedbintihoudjrat@gmail.com,kamanta7605@gmail.com"
         STAGING_PORT    = "8081"
         PROD_PORT       = "8000"
         
@@ -21,7 +22,7 @@ pipeline {
     }
 
     options {
-        timeout(time: 15, unit: 'MINUTES')
+        timeout(time: 30, unit: 'MINUTES')
         buildDiscarder(logRotator(numToKeepStr: '10'))
         disableConcurrentBuilds()
         timestamps()
@@ -87,7 +88,6 @@ pipeline {
                         --restart unless-stopped \
                         ${IMAGE_NAME}:staging \
                 """
-                //sh -c "rm -f bootstrap/cache/*.php && php-fpm"
             }
         }
 
@@ -99,15 +99,12 @@ pipeline {
                     
                     try {
                         echo "------- Configuration de l'application -------"
-                        // On lance les commandes directement puisque le WORKDIR est bon
-                        sh "docker exec laravel-staging php artisan config:clear"
-                        sh "docker exec laravel-staging php artisan migrate --force"
-                        
+                        sh "docker exec -e PROMETHEUS_STORAGE_DRIVER=memory laravel-staging php artisan config:clear"
+                        sh "docker exec -e PROMETHEUS_STORAGE_DRIVER=memory laravel-staging php artisan migrate --force"
                         echo "------- Exécution des Tests PHPUnit -------"
-                        sh "docker exec laravel-staging php vendor/bin/phpunit"
+                        sh "docker exec -e PROMETHEUS_ENABLE=false -e PROMETHEUS_STORAGE_DRIVER=memory laravel-staging php vendor/bin/phpunit"
                         
                         echo "✅ Tests réussis !"
-                        echo "Branch actuelle: ${env.BRANCH_NAME}"
                     } catch (Exception e) {
                         echo "------- Logs du conteneur en cas d'erreur -------"
                         sh "docker logs laravel-staging"
@@ -118,18 +115,14 @@ pipeline {
         }
 
         stage('Deploy Production') {
-            
-            //when { branch 'main' }
             steps {
-                
-                echo"-------attente de confirmation---------"
+                echo "------- Attente de confirmation ---------"
                 input message: "🚀 Déployer en PRODUCTION ?", ok: "Confirmer"
                 
                 sh """
                     docker rm -f nginx-prod 2>/dev/null || true
-                    
-                    ls -l ${WORKSPACE}/nginx
                     docker rm -f laravel-prod 2>/dev/null || true
+                    
                     docker run -d \
                         --name laravel-prod \
                         --network ${DOCKER_NETWORK} \
@@ -146,9 +139,6 @@ pipeline {
                         ${IMAGE_NAME}:${IMAGE_TAG}
 
                     echo "🌐 Lancement Nginx..."
-                    
-                    docker rm -f nginx-prod 2>/dev/null || true
-                    
                     docker run -d \
                       --name nginx-prod \
                       --network ${DOCKER_NETWORK} \
@@ -160,8 +150,7 @@ pipeline {
                     
                     echo "🔄 Restart Nginx..."
                     docker restart nginx-prod
-
-            
+                    
                     echo "✅ Déploiement terminé !"
                 """
             }
@@ -169,94 +158,109 @@ pipeline {
     }
 
     post {
-    success {
-        emailext(
-            to: "${EMAILS}",
-            subject: "✅ SUCCESS - ${JOB_NAME} #${BUILD_NUMBER}",
-            mimeType: 'text/html',
-            body: """
-<!DOCTYPE html>
-<html>
-<body style="font-family: Arial; background-color:#f4f4f4; padding:20px;">
+        success {
+            script {
+                // Extraction des vraies données du commit Git
+                def commitAuthor = sh(script: "git log -1 --pretty=format:'%an'", returnStdout: true).trim()
+                def commitMessage = sh(script: "git log -1 --pretty=format:'%s'", returnStdout: true).trim()
+                def buildDate = sh(script: "date '+%Y-%m-%d %H:%M:%S'", returnStdout: true).trim()
 
-<div style="max-width:600px; margin:auto; background:white; padding:20px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.1);">
+                emailext(
+                    to: "${EMAILS}",
+                    subject: "✅ SUCCESS - ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                    mimeType: 'text/html',
+                    body: """
+                    <!DOCTYPE html>
+                    <html>
+                    <body style="font-family: Arial, sans-serif; background-color:#f4f4f4; padding:20px; color: #333;">
+                    <div style="max-width:600px; margin:auto; background:white; padding:20px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.1); border-top: 5px solid #28a745;">
+                        
+                        <h2 style="color:#28a745; margin-top:0;">✅ Pipeline Réussi avec Succès !</h2>
+                        <p>Bonjour l'équipe, le build et le déploiement se sont déroulés sans accroc.</p>
+                        
+                        <hr style="border:0; border-top:1px solid #eee; margin:20px 0;">
 
-    <h2 style="color:green;">✅ Build SUCCESS</h2>
+                        <table style="width:100%; border-collapse: collapse; line-height: 2a;">
+                            <tr><td style="width:40%;"><b>📦 Projet :</b></td><td>${env.JOB_NAME}</td></tr>
+                            <tr><td><b>🔢 Numéro de Build :</b></td><td>#${env.BUILD_NUMBER}</td></tr>
+                            <tr><td><b>👤 Développeur :</b></td><td style="color:#007bff; font-weight:bold;">${commitAuthor}</td></tr>
+                            <tr><td><b>💬 Message de Commit :</b></td><td><i>"${commitMessage}"</i></td></tr>
+                            <tr><td><b>🔖 SHA Commit :</b></td><td><code>${env.GIT_COMMIT?.take(7)}</code></td></tr>
+                            <tr><td><b>🕒 Date du Build :</b></td><td>${buildDate}</td></tr>
+                        </table>
 
-    <table style="width:100%; border-collapse: collapse;">
-        <tr><td><b>📦 Projet</b></td><td>${JOB_NAME}</td></tr>
-        <tr><td><b>🔢 Build</b></td><td>#${BUILD_NUMBER}</td></tr>
-        <tr><td><b>🌿 Branche</b></td><td>${env.BRANCH_NAME}</td></tr>
-        <tr><td><b>👤 Auteur</b></td><td>${env.GIT_COMMITTER_NAME ?: "N/A"}</td></tr>
-        <tr><td><b>💬 Commit</b></td><td>${env.GIT_COMMIT_MESSAGE ?: "N/A"}</td></tr>
-        <tr><td><b>🔖 Commit ID</b></td><td>${env.GIT_COMMIT}</td></tr>
-        <tr><td><b>🖥️ Node</b></td><td>${NODE_NAME}</td></tr>
-        <tr><td><b>📁 Workspace</b></td><td>${WORKSPACE}</td></tr>
-        <tr><td><b>🌍 Env</b></td><td>PRODUCTION</td></tr>
-        <tr><td><b>🕒 Date</b></td><td>${new Date()}</td></tr>
-    </table>
+                        <hr style="border:0; border-top:1px solid #eee; margin:20px 0;">
+                        
+                        <h4 style="margin-bottom:10px;">🌍 Environnements disponibles :</h4>
+                        <ul style="padding-left:20px; margin-top:0;">
+                            <li><a href="http://localhost:8081" target="_blank" style="color:#007bff; text-decoration:none; font-weight:bold;">💻 Accéder au Staging (Port 8081)</a></li>
+                            <li><a href="http://localhost:8000" target="_blank" style="color:#28a745; text-decoration:none; font-weight:bold;">🚀 Accéder à la Production (Port 8000)</a></li>
+                        </ul>
 
-    <br>
+                        <br>
+                        <div style="text-align:center;">
+                            <a href="${env.BUILD_URL}" style="background:#28a745; color:white; padding:12px 24px; text-decoration:none; border-radius:5px; font-weight:bold; display:inline-block;">
+                                🔎 Voir les détails sur Jenkins
+                            </a>
+                        </div>
+                    </div>
+                    </body>
+                    </html>
+                    """
+                )
+            }
+        }
+        
+        failure {
+            script {
+                def commitAuthor = sh(script: "git log -1 --pretty=format:'%an'", returnStdout: true).trim()
+                def commitMessage = sh(script: "git log -1 --pretty=format:'%s'", returnStdout: true).trim()
+                def buildDate = sh(script: "date '+%Y-%m-%d %H:%M:%S'", returnStdout: true).trim()
 
-    <div style="text-align:center;">
-        <a href="${BUILD_URL}" 
-           style="background:green; color:white; padding:10px 20px; text-decoration:none; border-radius:5px;">
-           🔎 Voir le Build
-        </a>
-    </div>
+                emailext(
+                    to: "${EMAILS}",
+                    subject: "❌ FAILURE - ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                    mimeType: 'text/html',
+                    body: """
+                    <!DOCTYPE html>
+                    <html>
+                    <body style="font-family: Arial, sans-serif; background-color:#f4f4f4; padding:20px; color: #333;">
+                    <div style="max-width:600px; margin:auto; background:white; padding:20px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.1); border-top: 5px solid #dc3545;">
+                        
+                        <h2 style="color:#dc3545; margin-top:0;">❌ Échec de la Pipeline</h2>
+                        <p style="color:#dc3545; font-weight:bold;">⚠️ Attention, une erreur a stoppé l'exécution de la pipeline.</p>
+                        
+                        <hr style="border:0; border-top:1px solid #eee; margin:20px 0;">
 
-</div>
+                        <table style="width:100%; border-collapse: collapse; line-height: 2a;">
+                            <tr><td style="width:40%;"><b>📦 Projet :</b></td><td>${env.JOB_NAME}</td></tr>
+                            <tr><td><b>🔢 Numéro de Build :</b></td><td>#${env.BUILD_NUMBER}</td></tr>
+                            <tr><td><b>👤 Dernier Auteur :</b></td><td>${commitAuthor}</td></tr>
+                            <tr><td><b>💬 Dernier Commit :</b></td><td><i>"${commitMessage}"</i></td></tr>
+                            <tr><td><b>🕒 Date du Crash :</b></td><td>${buildDate}</td></tr>
+                        </table>
 
-</body>
-</html>
-"""
-        )
+                        <p style="margin-top:20px; background:#fff3cd; border-left:4px solid #ffc107; padding:10px;">
+                            <b>Action requise :</b> Le déploiement a été annulé ou l'application a échoué aux tests automatiques (PHPUnit / PHP Lint).
+                        </p>
+
+                        <br>
+                        <div style="text-align:center;">
+                            <a href="${env.BUILD_URL}console" style="background:#dc3545; color:white; padding:12px 24px; text-decoration:none; border-radius:5px; font-weight:bold; display:inline-block;">
+                                🛠️ Analyser les Logs d'Erreur
+                            </a>
+                        </div>
+                    </div>
+                    </body>
+                    </html>
+                    """
+                )
+            }
+        }
+        
+        always {
+            echo "📌 Nettoyage des anciennes images Docker suspendues..."
+            sh 'docker image prune -f || true'
+        }
     }
-    
-    failure {
-        emailext(
-            to: "${EMAILS}",
-            subject: "❌ FAILURE - ${JOB_NAME} #${BUILD_NUMBER}",
-            mimeType: 'text/html',
-            body: """
-<!DOCTYPE html>
-<html>
-<body style="font-family: Arial; background-color:#f4f4f4; padding:20px;">
-
-<div style="max-width:600px; margin:auto; background:white; padding:20px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.1);">
-
-    <h2 style="color:red;">❌ Build FAILED</h2>
-
-    <table style="width:100%; border-collapse: collapse;">
-        <tr><td><b>📦 Projet</b></td><td>${JOB_NAME}</td></tr>
-        <tr><td><b>🔢 Build</b></td><td>#${BUILD_NUMBER}</td></tr>
-        <tr><td><b>🌿 Branche</b></td><td>${env.BRANCH_NAME}</td></tr>
-        <tr><td><b>🔖 Commit</b></td><td>${env.GIT_COMMIT}</td></tr>
-        <tr><td><b>🕒 Date</b></td><td>${new Date()}</td></tr>
-    </table>
-
-    <br>
-
-    <p style="color:red;"><b>⚠️ Une erreur est survenue. Vérifiez les logs.</b></p>
-
-    <div style="text-align:center;">
-        <a href="${BUILD_URL}" 
-           style="background:red; color:white; padding:10px 20px; text-decoration:none; border-radius:5px;">
-           🔎 Voir les logs
-        </a>
-    </div>
-
-</div>
-
-</body>
-</html>
-"""
-        )
-    }
-    
-    always {
-        echo "📌 Nettoyage des anciennes images Docker suspendues..."
-        sh 'docker image prune -f || true'
-    }
-}
 }
