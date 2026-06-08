@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Http\Resources\BiblioRessource;
+use App\Models\Discipline;
 use App\Models\Livre;
 
 class ApiBiblioController extends Controller
@@ -15,6 +16,14 @@ class ApiBiblioController extends Controller
     {
         //
         return ['Livres'=>BiblioRessource::collection(Livre::all())];
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function discipline(string $discipline)
+    {
+        return ['Disciplines'=>BiblioRessource::collection(Discipline::all())];
     }
 
     /**
