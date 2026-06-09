@@ -120,6 +120,8 @@ pipeline {
                 input message: "🚀 Déployer en PRODUCTION ?", ok: "Confirmer"
                 
                 sh """
+                    docker start redis-prod || docker run -d --name redis-prod -p 6379:6379 redis:alpine
+                    
                     docker rm -f nginx-prod 2>/dev/null || true
                     docker rm -f laravel-prod 2>/dev/null || true
                     
@@ -127,6 +129,8 @@ pipeline {
                         --name laravel-prod \
                         --network ${DOCKER_NETWORK} \
                         -w /var/www/html \
+                        -e PROMETHEUS_STORAGE_DRIVER=redis \
+                        -e REDIS_HOST=host.docker.internal \
                         -e APP_ENV=production \
                         -e APP_DEBUG=false \
                         -e APP_KEY=${APP_KEY} \
