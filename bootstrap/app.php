@@ -12,7 +12,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        $middleware->append('Iamfarhad\\Prometheus\\Middleware\\PrometheusMiddleware');
+        $middleware->append('Iamfarhad\\Prometheus\\Http\\Middleware\\PrometheusMetricsMiddleware');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
