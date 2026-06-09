@@ -34,6 +34,7 @@ RUN apk add --no-cache --virtual .build-deps \
     $PHPIZE_DEPS libpng-dev libjpeg-turbo-dev freetype-dev libzip-dev oniguruma-dev icu-dev zlib-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip intl \
+    && pecl install redis && docker-php-ext-enable redis \
     && apk del .build-deps
 
 COPY --from=builder /app .
@@ -74,6 +75,7 @@ RUN apk add --no-cache --virtual .build-deps \
     $PHPIZE_DEPS libpng-dev libjpeg-turbo-dev freetype-dev libzip-dev oniguruma-dev icu-dev zlib-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) pdo_mysql mbstring exif pcntl bcmath gd zip intl \
+    && pecl install redis && docker-php-ext-enable redis \
     && apk del .build-deps
 
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
