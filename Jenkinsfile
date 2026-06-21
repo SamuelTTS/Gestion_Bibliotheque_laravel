@@ -127,8 +127,8 @@ pipeline {
                         sh "docker exec -e PROMETHEUS_ENABLE=false -e PROMETHEUS_STORAGE_DRIVER=memory laravel-staging php vendor/bin/phpunit"
                         
                         echo "------- Exécution des Tests d'Intégration Postman (Newman) -------"
-                        # On lance Newman dans le même réseau Docker. Il attaque directement http://nginx-staging
-                        # On suppose que tes fichiers json sont dans un dossier nommé 'tests' à la racine de ton projet Git
+                        
+                        
                         sh """
                             docker run --rm \
                                 --network ${DOCKER_NETWORK} \
