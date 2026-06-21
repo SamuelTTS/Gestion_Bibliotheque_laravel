@@ -72,12 +72,14 @@ pipeline {
         stage('Deploy Staging') {
             steps {
                 sh """
-                    docker rm -f laravel-staging 2>/dev/null || true
+                    # Nettoyage des anciens conteneurs de Staging
+                    docker rm -f nginx-staging laravel-staging 2>/dev/null || true
+                    
+                    # 1. Lancement du conteneur applicatif (PHP-FPM)
                     docker run -d \
                         --name laravel-staging \
                         --network ${DOCKER_NETWORK} \
                         -w /var/www/html \
-                        -p ${STAGING_PORT}:9000 \
                         -e APP_ENV=staging \
                         -e APP_KEY=${APP_KEY} \
                         -e DB_CONNECTION=mysql \
@@ -86,7 +88,26 @@ pipeline {
                         -e DB_USERNAME=${DB_USERNAME} \
                         -e DB_PASSWORD=${DB_PASSWORD} \
                         --restart unless-stopped \
-                        ${IMAGE_NAME}:staging \
+                        ${IMAGE_NAME}:staging
+                    
+                    # 2. Préparation de la configuration Nginx pour le Staging
+                    # On adapte dynamiquement le default.conf pour pointer vers laravel-staging au lieu de laravel-prod
+                    mkdir -p ${WORKSPACE}/nginx_staging
+                    sed 's/laravel-prod/laravel-staging/g' ${WORKSPACE}/nginx/default.conf > ${WORKSPACE}/nginx_staging/default.conf
+                    
+                    # 3. Lancement du serveur Web Nginx pour le Staging
+                    echo "🌐 Lancement Nginx Staging..."
+                    docker run -d \
+                        --name nginx-staging \
+                        --network ${DOCKER_NETWORK} \
+                        -p ${STAGING_PORT}:80 \
+                        nginx:alpine
+                        
+                    echo "📥 Copie de la config Nginx Staging..."
+                    docker cp ${WORKSPACE}/nginx_staging/default.conf nginx-staging:/etc/nginx/conf.d/default.conf
+                    
+                    echo "🔄 Redémarrage de Nginx Staging..."
+                    docker restart nginx-staging
                 """
             }
         }
@@ -94,20 +115,34 @@ pipeline {
         stage('Integration Tests') {
             steps {
                 script {
-                    echo "⏳ Attente de démarrage de PHP-FPM..."
+                   echo "⏳ Attente de démarrage des services (PHP-FPM & Nginx)..."
                     sleep 10
                     
                     try {
                         echo "------- Configuration de l'application -------"
                         sh "docker exec -e PROMETHEUS_STORAGE_DRIVER=memory laravel-staging php artisan config:clear"
                         sh "docker exec -e PROMETHEUS_STORAGE_DRIVER=memory laravel-staging php artisan migrate --force"
-                        echo "------- Exécution des Tests PHPUnit -------"
+                        
+                        echo "------- Exécution des Tests PHPUnit (Backend) -------"
                         sh "docker exec -e PROMETHEUS_ENABLE=false -e PROMETHEUS_STORAGE_DRIVER=memory laravel-staging php vendor/bin/phpunit"
                         
-                        echo "✅ Tests réussis !"
+                        echo "------- Exécution des Tests d'Intégration Postman (Newman) -------"
+                        # On lance Newman dans le même réseau Docker. Il attaque directement http://nginx-staging
+                        # On suppose que tes fichiers json sont dans un dossier nommé 'tests' à la racine de ton projet Git
+                        sh """
+                            docker run --rm \
+                                --network ${DOCKER_NETWORK} \
+                                -v ${WORKSPACE}/tests:/etc/newman \
+                                postman/newman run collection_staging.json \
+                                --env-var "base_url=http://nginx-staging" \
+                                --reporters cli
+                        """
+                        
+                        echo "✅ Tous les tests (PHPUnit + Postman) sont réussis !"
                     } catch (Exception e) {
-                        echo "------- Logs du conteneur en cas d'erreur -------"
+                        echo "------- Logs des conteneurs en cas d'erreur -------"
                         sh "docker logs laravel-staging"
+                        sh "docker logs nginx-staging"
                         error "❌ Les tests d'intégration ont échoué"
                     }
                 }
