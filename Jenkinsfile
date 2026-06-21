@@ -133,7 +133,7 @@ pipeline {
                             docker run --rm \
                                 --network ${DOCKER_NETWORK} \
                                 -v ${WORKSPACE}/tests:/etc/newman \
-                                postman/newman run collection_staging.json \
+                                postman/newman run /etc/newman/collection_staging.json \
                                 --env-var "base_url=http://nginx-staging" \
                                 --reporters cli
                         """
