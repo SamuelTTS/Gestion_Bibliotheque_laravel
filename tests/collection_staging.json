@@ -7,7 +7,7 @@
   },
   "item": [
     {
-      "name": "Vérifier Page d'accueil",
+      "name": "01 - Affichage Page Login",
       "event": [
         {
           "listen": "test",
@@ -39,6 +39,46 @@
           ],
           "path": [
             ""
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "02 - Récupération Données API",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// Si MySQL est en panne, Laravel renverra une erreur 500. On vérifie qu'on a bien un code 200.\r",
+              "pm.test(\"Connexion BDD OK - Status 200\", function () {\r",
+              "    pm.response.to.have.status(200);\r",
+              "});\r",
+              "\r",
+              "// On s'assure que l'API renvoie bien un format JSON propre\r",
+              "pm.test(\"L'API renvoie du JSON\", function () {\r",
+              "    pm.response.to.be.withBody;\r",
+              "    pm.response.to.be.json;\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/apiBib",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "apiBib"
           ]
         }
       },
