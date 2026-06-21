@@ -129,17 +129,28 @@ pipeline {
                         echo "------- Exécution des Tests d'Intégration Postman (Newman) -------"
                         
                         
+                        echo "------- Exécution des Tests d'Intégration Postman (Newman) -------"
                         sh """
-                            docker run --rm \
+                           
+                            docker rm -f newman-test || true
+                            
+                           
+                            docker create --name newman-test \
                                 --network ${DOCKER_NETWORK} \
-                                -v ${WORKSPACE}/tests:/etc/newman \
-                                postman/newman run /etc/newman/collection_staging.json \
+                                postman/newman run /collection_staging.json \
                                 --env-var "base_url=http://nginx-staging" \
                                 --reporters cli
+                            
+                           
+                            docker cp ${WORKSPACE}/tests/collection_staging.json newman-test:/collection_staging.json
+                            
+                          
+                            docker start -a newman-test
                         """
                         
                         echo "✅ Tous les tests (PHPUnit + Postman) sont réussis !"
                     } catch (Exception e) {
+                        sh "docker rm -f newman-test || true"
                         echo "------- Logs des conteneurs en cas d'erreur -------"
                         sh "docker logs laravel-staging"
                         sh "docker logs nginx-staging"
