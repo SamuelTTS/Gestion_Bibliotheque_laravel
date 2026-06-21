@@ -1,0 +1,48 @@
+{
+  "info": {
+    "_postman_id": "8c5ff560-1a1f-401a-91d3-7c87ed1f08d5",
+    "name": "Tests Integration - Staging",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "33719697"
+  },
+  "item": [
+    {
+      "name": "Vérifier Page d'accueil",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// Test 1 : Est-ce que le serveur répond (Code HTTP 200 OK) ?\r",
+              "pm.test(\"L'application répond avec un statut 200 OK\", function () {\r",
+              "    pm.response.to.have.status(200);\r",
+              "});\r",
+              "\r",
+              "// Test 2 : Est-ce que la page se charge rapidement (Performance) ?\r",
+              "pm.test(\"Le temps de réponse est inférieur à 800ms\", function () {\r",
+              "    pm.expect(pm.response.responseTime).to.be.below(800);\r",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            ""
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}
