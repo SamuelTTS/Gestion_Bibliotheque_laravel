@@ -19,7 +19,7 @@
               "});\r",
               "\r",
               "// Test 2 : Est-ce que la page se charge rapidement (Performance) ?\r",
-              "pm.test(\"Le temps de réponse est inférieur à 800ms\", function () {\r",
+              "pm.test(\"Le temps de réponse est inférieur à 2000ms\", function () {\r",
               "    pm.expect(pm.response.responseTime).to.be.below(2000);\r",
               "});"
             ],
